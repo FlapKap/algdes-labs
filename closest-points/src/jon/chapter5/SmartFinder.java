@@ -53,26 +53,26 @@ public class SmartFinder implements ClosestPairFinder {
             final var leftY = pointsByY.subList(0, splitY);
             final var rightY = pointsByY.subList(splitY, pointsByX.size());
 
-            final var xStar = pointsByX.get(splitX);
-
             final var minLeft = findClosestPairRec(acc, leftX, leftY);
             final var minRight = findClosestPairRec(acc, rightX, rightY);
             final var minDist = (minLeft.dist < minRight.dist) ? minLeft : minRight;
 
-            final double minX = xStar.x - (minDist.dist / 2.0);
-            final double maxX = xStar.x + (minDist.dist / 2.0);
+            final var xStar = pointsByX.get(splitX).x;
+            final var delta = minDist.dist;
 
-            final var s = pointsByX.stream().filter(p -> p.x <= maxX && p.x >= minX);
+            final var s = pointsByX.stream().filter(p -> p.x >= xStar - delta && p.x <= xStar + delta);
 
             final var sY = s.sorted(Comparator.comparingDouble(p -> p.y)).collect(Collectors.toList());
-
-            var sYMin = minDist;
 
             final var sLength = sY.size();
             comparisons += (long) (sLength * Math.log(sLength)); //Add n * log(n) where n = sLength, for sorting
 
+            var sYMin = minDist;
             for (int i = 0; i < sLength; i++) {
-                final var newMin = selectClosestPair(sY.subList(i, Math.min(sLength, i + 15)), sYMin);
+                final int ahead = i + 15;
+                final var toCompare = (ahead < sLength) ? sY.subList(i, ahead)
+                        : concat(sY.subList(0, ahead % sLength ), sY.subList(i, sLength));
+                final var newMin = selectClosestPair(toCompare, sYMin);
                 if (newMin.dist < sYMin.dist) {
                     sYMin = newMin;
                 }
@@ -91,6 +91,7 @@ public class SmartFinder implements ClosestPairFinder {
         );
         var sortedByX = sorted(points, p -> p.x);
         var sortedByY = sorted(points, p -> p.y);
+        comparisons += points.size() * Math.log(points.size());
         return findClosestPairRec(initial, sortedByX, sortedByY);
     }
 }
