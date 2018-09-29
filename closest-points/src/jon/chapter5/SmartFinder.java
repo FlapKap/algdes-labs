@@ -45,8 +45,6 @@ public class SmartFinder implements ClosestPairFinder {
         if (pointsByX.size() <= 3) {
             return selectClosestPair(concat(pointsByX, arrayListOf(acc.a, acc.b)), acc);
         } else {
-
-
             final int splitX = pointsByX.size() / 2;
             final var leftX = pointsByX.subList(0, splitX);
             final var rightX = pointsByX.subList(splitX, pointsByX.size());
@@ -56,9 +54,6 @@ public class SmartFinder implements ClosestPairFinder {
             final var rightY = pointsByY.subList(splitY, pointsByX.size());
 
             final var xStar = pointsByX.get(splitX);
-
-            //I want to count comparisons.
-            final var n = (double) pointsByX.size();
 
             final var minLeft = findClosestPairRec(acc, leftX, leftY);
             final var minRight = findClosestPairRec(acc, rightX, rightY);
@@ -70,19 +65,17 @@ public class SmartFinder implements ClosestPairFinder {
             final var s = pointsByX.stream().filter(p -> p.x <= maxX && p.x >= minX);
 
             final var sY = s.sorted(Comparator.comparingDouble(p -> p.y)).collect(Collectors.toList());
-            comparisons += (long) (n * Math.log(n));
 
             var sYMin = minDist;
-            var sLength = sY.size();
+
+            final var sLength = sY.size();
+            comparisons += (long) (sLength * Math.log(sLength)); //Add n * log(n) where n = sLength, for sorting
+
             for (int i = 0; i < sLength; i++) {
-                final int ahead = i + 15;
-                final var toCompare = (ahead < sLength) ? sY.subList(i, ahead)
-                        : concat(sY.subList(0, ahead % sLength ), sY.subList(i, sLength));
-                final var newMin = selectClosestPair(toCompare, sYMin);
+                final var newMin = selectClosestPair(sY.subList(i, Math.min(sLength, i + 15)), sYMin);
                 if (newMin.dist < sYMin.dist) {
                     sYMin = newMin;
                 }
-                comparisons += 1;
             }
 
             return sYMin;

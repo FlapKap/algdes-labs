@@ -79,7 +79,7 @@ class SmartFinderTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"124", "256", "512", "1024", "4096", "8192"})
+    @CsvSource({"124", "256", "512", "1024", "4096"})
     void complexityLessThanLinearithmicTest(int n) {
 
         //In it's current form, I expect a complexity of O(N) = N * (log(N))^2
