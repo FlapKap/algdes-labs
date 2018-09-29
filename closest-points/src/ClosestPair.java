@@ -1,5 +1,6 @@
 import java.util.*;
 import java.io.*;
+import java.io.FileNotFoundException;
 
 public class ClosestPair {
 	
@@ -60,17 +61,7 @@ public class ClosestPair {
 		}
 		return closestPair;
 	}
-	
-	
-	public static void sort_by_x(ArrayList<point> P) {
-		 P.sort(Comparator.comparingDouble(o -> o.x));
-	}
-	
-	public static void sort_by_y(ArrayList<point> P) {
-		 P.sort(Comparator.comparingDouble(o -> o.y));
-	}
-	
-	
+
 	public static MinDistancePoints ClosestPairRec(ArrayList<point> Px, ArrayList<point> Py) {
 		MinDistancePoints closestPair = new MinDistancePoints(null,null);
 		MinDistancePoints closestPair_Q = new MinDistancePoints(null,null);
@@ -127,39 +118,82 @@ public class ClosestPair {
 	
 	
 	public static ArrayList<point> readFile(String filepath) throws IOException{
-		Scanner sc = new Scanner(new File(filepath));
-		ArrayList<point> P = new ArrayList<>();
-		String[] pointData = new String[3];
-		String str;
-
-		while(sc.hasNextLine()) 
-			if(sc.nextLine().contains("NODE_COORD_SECTION")) 
-				break;
-			 
-		while(sc.hasNext()) {
-			str = sc.nextLine();
-			if(str.contains("EOF"))
-				break;
-			String[] parts = str.split(" ");
-			int j = 0;
-			for(int i=0;i<parts.length;i++) 
-				if(!"".equals(parts[i])) 
-					pointData[j++] = parts[i];
-			P.add(new point(pointData[0],Double.parseDouble(pointData[1]),Double.parseDouble(pointData[2])));
+		
+		try {
+			Scanner sc = new Scanner(new File(filepath));
+			ArrayList<point> P = new ArrayList<>();
+		
+			 if("close-pairs".equals(filepath.substring(0, 11)) || "wc".equals(filepath.substring(0,2))) {
+				 P = readPoints(sc);
+			 }
+			 else {
+				while(sc.hasNextLine()) 
+					if(sc.nextLine().contains("NODE_COORD_SECTION")) 
+						break;
+				P = readPoints(sc);	 
+			 }
+			sc.close();
+			return P;
 		}
-		sc.close();
-		return P;
+		catch(FileNotFoundException e) {
+            System.err.println("The specified file could not be found: " + filepath);
+            System.exit(1);
+            return null;
+		}
 	}
 	
 	
+	public static ArrayList<point> readPoints(Scanner sc) {
+		ArrayList<point> P = new ArrayList<>();
+		
+		while(sc.hasNext()) {
+			String str = sc.nextLine().trim();
+			if(str.contains("EOF"))
+				break;
+			String[] parts = str.split("\\s+");
+			P.add(new point(parts[0],Double.parseDouble(parts[1]),Double.parseDouble(parts[2])));
+		} 
+		return P;
+	}
+	
+	public static void sort_by_x(ArrayList<point> P) {
+		 P.sort(Comparator.comparingDouble(o -> o.x));
+	}
+	
+	public static void sort_by_y(ArrayList<point> P) {
+		 P.sort(Comparator.comparingDouble(o -> o.y));
+	}
+	
+	public static ArrayList<point> construct_Px(ArrayList<point> P){
+		ArrayList<point> Px = new ArrayList<>(P);
+		sort_by_x(Px);
+		return Px;
+	}
+	
+	public static ArrayList<point> construct_Py(ArrayList<point> P){
+		ArrayList<point> Py = new ArrayList<>(P);
+		sort_by_y(Py);
+		return Py;
+	}
+	
+
 	 public static void main(String[] args) throws IOException {
+		 if (args.length != 1) {
+			 System.err.println("Please give a single file name as argument.");
+		     System.exit(1);
+		 }
+		 
+		 //long StartTime = System.nanoTime();
 		 
 		 ArrayList<point> P = readFile(args[0]);
-		 ArrayList<point> Px = new ArrayList<>(P);
-		 ArrayList<point> Py = new ArrayList<>(P);
-		 sort_by_x(Px);
-		 sort_by_y(Py);
+		 ArrayList<point> Px = construct_Px(P);
+		 ArrayList<point> Py = construct_Py(P);
+		 
 		 MinDistancePoints closestPair = ClosestPairRec(Px,Py);
 		 closestPair.printPoints();
+		 
+		 //long EndTime = System.nanoTime();
+		 //System.out.println("Time (milliseconds): "+ (EndTime - StartTime)/1000000);
+		 
 	}
 }
