@@ -1,6 +1,6 @@
-package com.wingcorp;
+package Fredderoni.com.wingcorp;
 
-import com.wingcorp.Parser.ParsedData;
+import Fredderoni.com.wingcorp.Parser.ParsedData;
 
 public class Main {
 

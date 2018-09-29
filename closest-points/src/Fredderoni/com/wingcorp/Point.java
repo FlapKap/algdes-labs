@@ -1,4 +1,4 @@
-package com.wingcorp;
+package Fredderoni.com.wingcorp;
 
 public class Point {
     double x;
