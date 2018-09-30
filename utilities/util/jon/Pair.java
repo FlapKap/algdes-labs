@@ -1,4 +1,4 @@
-package jon.util;
+package util.jon;
 
 import java.util.Objects;
 

@@ -1,4 +1,4 @@
-package jon.chapter5;
+package cp.jon;
 
 /**
  * Data class for storing Pairs and their distances.

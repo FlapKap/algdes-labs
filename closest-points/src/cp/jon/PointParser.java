@@ -1,6 +1,6 @@
-package jon.chapter5;
+package cp.jon;
 
-import jon.util.InputReader;
+import util.jon.InputReader;
 
 import java.io.IOException;
 import java.io.InputStream;

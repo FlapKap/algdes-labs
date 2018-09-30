@@ -1,4 +1,4 @@
-package jon.chapter5;
+package cp.jon;
 
 import java.util.List;
 

@@ -1,13 +1,13 @@
-package jon.chapter5;
+package cp.jon;
 
-import jon.util.Pair;
+import util.jon.Pair;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.Arrays;
 
-import static jon.chapter5.TestHelper.randomPoints;
+import static cp.jon.TestHelper.randomPoints;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

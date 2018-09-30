@@ -1,8 +1,6 @@
-package jon.chapter5;
+package cp.jon;
 
-import static jon.util.Utils.arrayListOf;
-import static jon.util.Utils.concat;
-import static jon.util.Utils.sorted;
+import util.jon.Utils;
 
 import java.util.Comparator;
 import java.util.List;
@@ -43,7 +41,7 @@ public class SmartFinder implements ClosestPairFinder {
 
     private MeasuredPair findClosestPairRec(MeasuredPair acc, List<Point> pointsByX, List<Point> pointsByY) {
         if (pointsByX.size() <= 3) {
-            return selectClosestPair(concat(pointsByX, arrayListOf(acc.a, acc.b)), acc);
+            return selectClosestPair(Utils.concat(pointsByX, List.of(acc.a, acc.b)), acc);
         } else {
             final int splitX = pointsByX.size() / 2;
             final var leftX = pointsByX.subList(0, splitX);
@@ -71,7 +69,7 @@ public class SmartFinder implements ClosestPairFinder {
             for (int i = 0; i < sLength; i++) {
                 final int ahead = i + 15;
                 final var toCompare = (ahead < sLength) ? sY.subList(i, ahead)
-                        : concat(sY.subList(0, ahead % sLength ), sY.subList(i, sLength));
+                        : Utils.concat(sY.subList(0, ahead % sLength ), sY.subList(i, sLength));
                 final var newMin = selectClosestPair(toCompare, sYMin);
                 if (newMin.dist < sYMin.dist) {
                     sYMin = newMin;
@@ -89,8 +87,8 @@ public class SmartFinder implements ClosestPairFinder {
                 new Point("MAX_POINT", Double.MAX_VALUE, Double.MAX_VALUE),
                 new Point("MIN_POINT", -Double.MAX_VALUE, -Double.MAX_VALUE)
         );
-        var sortedByX = sorted(points, p -> p.x);
-        var sortedByY = sorted(points, p -> p.y);
+        var sortedByX = Utils.sorted(points, p -> p.x);
+        var sortedByY = Utils.sorted(points, p -> p.y);
         comparisons += points.size() * Math.log(points.size());
         return findClosestPairRec(initial, sortedByX, sortedByY);
     }

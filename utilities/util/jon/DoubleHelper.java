@@ -1,4 +1,4 @@
-package jon.util;
+package util.jon;
 
 public class DoubleHelper {
     private static double EPSILON = 0.0000001;

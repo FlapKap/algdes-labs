@@ -1,4 +1,6 @@
-package jon.chapter5;
+package cp.jon;
+
+import util.jon.MainHelper;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -21,33 +23,20 @@ public class Main {
 
         //Prints out "<file>: n = <number of points>, min_dist = <closest distance>, min_pair = <closest pair>"
         System.out.printf(
-                "%s: n = %d, min_dist = %f, min_pair = (%s, %s)\n",
+                "%s: n = %d, min_dist = %f, min_pair = [(%f, %f), (%f, %f)]\n",
                 file,
                 (points.size()),
                 closestPair.dist,
-                closestPair.a.name,
-                closestPair.b.name
+                closestPair.a.x,
+                closestPair.a.y,
+                closestPair.b.x,
+                closestPair.b.y
         );
     }
 
     public static void main(String[] args) {
         final var start = System.currentTimeMillis();
-        switch (args.length) {
-            case 0:
-                runForFile("stdin", System.in);
-                break;
-            default:
-                for (var arg : args) {
-                    try {
-                        var inputStream = new FileInputStream(arg);
-                        runForFile(arg, inputStream);
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                        System.exit(1);
-                    }
-                }
-                break;
-        }
+        MainHelper.acceptArgs(args, Main::runForFile);
         System.out.printf("Total elapsed time: %dms\n", System.currentTimeMillis() - start);
     }
 }

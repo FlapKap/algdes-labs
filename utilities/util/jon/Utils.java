@@ -1,4 +1,4 @@
-package jon.util;
+package util.jon;
 
 import java.util.*;
 import java.util.function.*;
@@ -8,18 +8,6 @@ import java.util.stream.Stream;
  * A class for containing static utility functions.
  */
 public class Utils {
-
-    /**
-     * Shorthand for creating an new ArrayList and adding objects to it, individually.
-     *
-     * @param ts  the objects to add to the list
-     * @param <T> the type of objects for the list
-     * @return an ArrayList containing the given objects
-     */
-    @SafeVarargs
-    public static <T> ArrayList<T> arrayListOf(T... ts) {
-        return new ArrayList<>(Arrays.asList(ts));
-    }
 
     /**
      * Concatenates two lists together, creating an ArrayList of the combined entries.
