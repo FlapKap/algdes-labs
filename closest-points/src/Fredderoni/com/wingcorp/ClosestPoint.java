@@ -1,4 +1,4 @@
-package com.wingcorp;
+package Fredderoni.com.wingcorp;
 
 import java.util.Arrays;
 import java.util.Comparator;

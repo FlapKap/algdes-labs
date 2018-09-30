@@ -1,4 +1,4 @@
-package com.wingcorp;
+package Fredderoni.com.wingcorp;
 
 import java.io.File;
 import java.io.FileNotFoundException;

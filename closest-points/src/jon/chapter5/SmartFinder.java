@@ -45,8 +45,6 @@ public class SmartFinder implements ClosestPairFinder {
         if (pointsByX.size() <= 3) {
             return selectClosestPair(concat(pointsByX, arrayListOf(acc.a, acc.b)), acc);
         } else {
-
-
             final int splitX = pointsByX.size() / 2;
             final var leftX = pointsByX.subList(0, splitX);
             final var rightX = pointsByX.subList(splitX, pointsByX.size());
@@ -55,26 +53,26 @@ public class SmartFinder implements ClosestPairFinder {
             final var leftY = pointsByY.subList(0, splitY);
             final var rightY = pointsByY.subList(splitY, pointsByX.size());
 
-//            final var leftY = sorted(leftX, p -> p.y);
-//            final var rightY = sorted(rightX, p -> p.y);
-
-            //I want to count comparisons.
-            final var n = (double) pointsByX.size();
-            comparisons += (long) (n * Math.log(n));
-
             final var minLeft = findClosestPairRec(acc, leftX, leftY);
             final var minRight = findClosestPairRec(acc, rightX, rightY);
             final var minDist = (minLeft.dist < minRight.dist) ? minLeft : minRight;
 
-            final var l = rightX.stream().max(Comparator.comparingDouble(p -> p.x)).orElseThrow();
+            final var xStar = pointsByX.get(splitX).x;
+            final var delta = minDist.dist;
 
-            final var s = pointsByX.stream().filter(p -> Point.distance(l, p) <= minDist.dist);
+            final var s = pointsByX.stream().filter(p -> p.x >= xStar - delta && p.x <= xStar + delta);
 
             final var sY = s.sorted(Comparator.comparingDouble(p -> p.y)).collect(Collectors.toList());
 
+            final var sLength = sY.size();
+            comparisons += (long) (sLength * Math.log(sLength)); //Add n * log(n) where n = sLength, for sorting
+
             var sYMin = minDist;
-            for (int i = 0; i < sY.size(); i++) {
-                final var newMin = selectClosestPair(sY, sYMin);
+            for (int i = 0; i < sLength; i++) {
+                final int ahead = i + 15;
+                final var toCompare = (ahead < sLength) ? sY.subList(i, ahead)
+                        : concat(sY.subList(0, ahead % sLength ), sY.subList(i, sLength));
+                final var newMin = selectClosestPair(toCompare, sYMin);
                 if (newMin.dist < sYMin.dist) {
                     sYMin = newMin;
                 }
@@ -93,6 +91,7 @@ public class SmartFinder implements ClosestPairFinder {
         );
         var sortedByX = sorted(points, p -> p.x);
         var sortedByY = sorted(points, p -> p.y);
+        comparisons += points.size() * Math.log(points.size());
         return findClosestPairRec(initial, sortedByX, sortedByY);
     }
 }
