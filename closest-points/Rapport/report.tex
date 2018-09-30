@@ -1,0 +1,89 @@
+\documentclass{tufte-handout}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc}
+\usepackage{mathpazo}
+\usepackage{booktabs}
+\usepackage{microtype}
+
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=Java,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+
+\pagestyle{empty}
+
+
+\title{Closest Pair Report}
+\author{Kasper Hjort Berthelsen, Jesper Kato Jensen, Frederik Schou Madsen, Heidi Regina Schröder, Julie Schou Sørensen  \& Jon Voigt Tøttrup}
+
+\begin{document}
+  \maketitle
+  
+
+  \section{Results}
+
+  Our implementation produces the expected results on all input--output file pairs. %except {\tt slotermeier-23-tsp.txt}, where our code reports distance 2.531 as the shortest distance.  This may be because of rounding errors, or differences between {\tt float} and {\tt double} on various machines.
+%  \sidenote{%Complete the report by filling in your correct names,  filling in the parts marked $[\ldots]$,  and changing other parts wherever necessary.  For instance, if your implementation passes all tests, then write that.  Remove the sidenotes in your final hand-in.  }
+
+The following table shows the closest pairs in the input files {\tt wc-instance-65534.txt}.
+Here $n$ denotes the number of points in the input,
+and $(u,v)$ denotes a closest pair of points at distance $\delta$.
+
+  \bigskip\noindent
+  \begin{tabular}{rrrrr}\toprule
+    $n$ & $u$ & $v$ & $\delta$ & running time \\\midrule
+    65.534 & (0.5,-0.0) & (-0.5,0.0) & 1.0 & $\sim$ 1 sec \\
+%    $[\ldots]$ 
+\\\bottomrule
+  \end{tabular}
+
+  \section{Implementation details}
+The implementation follows Section 5.4 of Kleinberg and Tardos, \emph{Algorithm Design}, Addison--Wesley 2006. It is a divide and conquer technique that divides the two-dimensional space and works by recurrence. 
+
+We start by constructing the set of points $P=\{ p_1, ..., p_n\}$. Each point is implemented as a \verb#point#-class that has a name, a $x$-coordinate and a $y$-coordinate as well as a \verb#distance#-method. The total set of points is then implemented as an ArrayList of points.
+
+After constructing $P$ we construct $P_x$ and $P_y$, that is, $P$ sorted by its $x$-coordinate and $y$-coordinate, respectively. This takes $n\log n$ time. We call the recurrence \verb#ClosestPairRec#, that divides the space in a left half, $Q$, and a right half, $R$. Again we construct sets that are sorted by $x$-coordinates and $y$-coordinates; $Q_x, Q_y, R_x$ and $R_y$. $Q_x$ and $R_x$ are found in linear time by looping though $P_x$, but $Q_y$ and $R_y$ are sorted again, which factors the fastest found running time by $n\log n$. 
+
+For the comparison of the points in the middle of the two half, we construct the set of sorted points $S_y= \{s: x^*-\delta \ge s \ge x^*+\delta\}$, where $x^*$ is the right most point in $Q$. For each point $s$ we inspect the following 15 points in $S_y$, as explained (5.10) of Kleinberg and Tardos, \emph{Algorithm Design}, Addison--Wesley 2008. Below you find the corresponding part of our code. 
+\begin{verbatim}
+closestPair.p0 = P.get(0);
+closestPair.p1 = P.get(1);
+dmin = P.get(0).distance(P.get(1));
+
+for(int i=0;i<P.size()-1;i++) {
+    for(int j=1; j<Math.min(P.size()-i, 15); j++) {
+        d = P.get(i).distance(P.get(i+j));
+        if(d<dmin) {
+            dmin = d;
+            closestPair.p0 = P.get(i);
+            closestPair.p1 = P.get(i+j);
+        }
+    }
+}
+return closestPair;
+  \end{verbatim}
+Because of the extra sorting in each recurrence step, our running time is $O(n\log^{2} n)$ for $n$ points.
+
+
+
+\end{document}
