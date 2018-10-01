@@ -18,7 +18,7 @@ public class SpeciesParser {
                 protein.append(line);
             } else {
                 if (name != null) {
-                    species.addFirst(new Species(name, protein));
+                    species.addFirst(new Species(name, protein.toString()));
                 }
                 name = line.split("\\W")[1];
                 protein = new StringBuilder();

@@ -6,7 +6,7 @@ package gorilla;
 public class AlignedSequence {
     final Species left;
     final Species right;
-    final CharSequence sequence;
+    final String sequence;
     final Integer cost;
 
     /**
@@ -18,7 +18,7 @@ public class AlignedSequence {
      * @param sequence the final protein sequence (with possible gaps characters '*')
      * @param cost     the final cost of the protein alignment
      */
-    public AlignedSequence(Species left, Species right, CharSequence sequence, Integer cost) {
+    public AlignedSequence(Species left, Species right, String sequence, Integer cost) {
         this.left = left;
         this.right = right;
         this.sequence = sequence;
