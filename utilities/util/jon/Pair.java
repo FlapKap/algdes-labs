@@ -1,6 +1,7 @@
 package util.jon;
 
 import java.util.Objects;
+import java.util.function.BiFunction;
 
 /**
  * Utility class for holding pairs.
@@ -14,6 +15,14 @@ public class Pair<A, B> {
     public Pair(A left, B right) {
         this.left = left;
         this.right = right;
+    }
+
+    public Pair<A, B> updateLeft(BiFunction<A, B, A> updater) {
+        return new Pair<>(updater.apply(this.left, this.right), this.right);
+    }
+
+    public Pair<A, B> updateRight(BiFunction<A, B, B> updater) {
+        return new Pair<>(this.left, updater.apply(this.left, this.right));
     }
 
     @Override

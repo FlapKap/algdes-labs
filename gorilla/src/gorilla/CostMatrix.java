@@ -17,7 +17,7 @@ public class CostMatrix {
      * @param to   the char we're rotating to
      * @return the cost of rotating
      */
-    Integer getCost(char from, char to) {
+    public Integer getCost(char from, char to) {
         return costMapping.get(from).get(to);
     }
 }
