@@ -61,6 +61,17 @@ public class InputReader implements Closeable {
         return findNext(Pattern.compile(pattern));
     }
 
+    public String readLine() {
+        try {
+            return bufferedReader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+
     /**
      * Determines whether there is anything left in the stream.
      * @return whether another line is present.
