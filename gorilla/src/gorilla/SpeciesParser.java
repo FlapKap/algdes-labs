@@ -1,17 +1,13 @@
 package gorilla;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import util.jon.InputReader;
 
 public class SpeciesParser {
-    public static List<Species> parseSpecies(InputStream stream) throws IOException {
+    public static List<Species> parseSpecies(InputStream stream) {
         final var reader = new InputReader(stream);
         final var species = new LinkedList<Species>();
         String name = null;
@@ -24,7 +20,7 @@ public class SpeciesParser {
                 if (name != null) {
                     species.addFirst(new Species(name, protein));
                 }
-                name = Pattern.compile(">(\\w+)").matcher(line).group(1);
+                name = line.split("\\W")[1];
                 protein = new StringBuilder();
             }
         }
