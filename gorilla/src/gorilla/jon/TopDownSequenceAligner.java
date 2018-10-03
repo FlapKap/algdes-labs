@@ -24,9 +24,9 @@ public class TopDownSequenceAligner implements SequenceAligner {
         }
     }
 
-    private Pair<String, Integer> align(String left, String right) {
+    private Pair<String, Integer> align(Pair<String, Integer> acc, String left, String right) {
         if (left.isEmpty() && right.isEmpty()) {
-            return new Pair<>("", 0);
+            return acc;
         }
         var leftCons = consOfString(left);
         var rightCons = consOfString(right);
@@ -36,9 +36,9 @@ public class TopDownSequenceAligner implements SequenceAligner {
         var ys = rightCons.right;
 
         //Something is still not right here...
-        var p1 = align(xs, right).updateRight((l, r) -> r + costMatrix.getCost(x, GAP));
-        var p2 = align(left, ys).updateRight((l, r) -> r + costMatrix.getCost(y, GAP));
-        var p3 = align(xs, ys).updateRight((l, r) -> r + costMatrix.getCost(x, y));
+        var p1 = align(new Pair<>(acc.left + GAP, acc.right + costMatrix.getCost(x, GAP)), xs, right);
+        var p2 = align(new Pair<>(acc.left + GAP, acc.right + costMatrix.getCost(y, GAP)), left, ys );
+        var p3 = align(new Pair<>(acc.left + x, acc.right + costMatrix.getCost(x, y)), xs, ys);
 
         return List.of(p1, p2, p3)
                 .stream()
@@ -54,7 +54,7 @@ public class TopDownSequenceAligner implements SequenceAligner {
             for (int j = i + 1; j < speciesList.size(); j++) {
                 var left = speciesList.get(i);
                 var right = speciesList.get(j);
-                var alignment = align(left.protein, right.protein);
+                var alignment = align(new Pair<>("", 0), left.protein, right.protein);
                 alignedSequences.add(new AlignedSequence(left, right, alignment.left, alignment.right));
             }
         }
