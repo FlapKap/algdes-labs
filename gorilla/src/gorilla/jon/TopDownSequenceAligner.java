@@ -6,81 +6,89 @@ import gorilla.SequenceAligner;
 import gorilla.Species;
 import util.jon.Pair;
 import util.jon.Triplet;
+import util.jon.Utils;
 
 import java.util.*;
+
+import static java.util.List.*;
 
 public class TopDownSequenceAligner implements SequenceAligner {
 
     private CostMatrix costMatrix;
 
-    private Map<Integer, Map<Integer, Triplet<String, String, Integer>>> memoizer;
+    private Map<Integer, Map<Integer, Pair<Integer, String>>> memoizer;
 
     private String leftProtein;
     private String rightProtein;
 
-    public Triplet<String, String, Integer> align(int i, int j) {
+    private Pair<Integer, String> align(int i, int j) {
         if (i == 0 && j == 0) {
-            return new Triplet<>("", "", 0);
+            return new Pair<>(0, "");
         }
         if (memoizer.containsKey(i) && memoizer.get(i).containsKey(j)) {
             return memoizer.get(i).get(j);
         }
         char GAP = '*';
+        String GAP_S = GAP + "";
 
         if (i == 0) {
             var delta = costMatrix.getCost(rightProtein.charAt(j), GAP);
-            return new Triplet<>("", "" + GAP, j * delta);
+            return new Pair<>(j * delta, GAP_S);
         }
         if (j == 0) {
             var delta = costMatrix.getCost(leftProtein.charAt(i), GAP);
-            return new Triplet<>("" + GAP, "", i * delta);
+            return new Pair<>(i * delta, GAP_S);
         }
         var leftDelta = costMatrix.getCost(leftProtein.charAt(i), GAP);
         var rightDelta = costMatrix.getCost(rightProtein.charAt(j), GAP);
 
         var alpha = costMatrix.getCost(leftProtein.charAt(i), rightProtein.charAt(j));
-        var leaveChars = align(i - 1, j - 1).updateRight(cost -> cost + alpha);
 
-        var addGapLeft = align(i - 1, j).updateRight(cost -> cost + leftDelta);
+        var leaveChars = align(i - 1, j - 1).updateLeft(cost -> cost + alpha).updateRight(l -> l + rightProtein.charAt(j));
 
-        var addGapRight = align(i, j - 1).updateRight(cost -> cost + rightDelta);
+        var addGapLeft = align(i - 1, j).updateLeft(cost -> cost + leftDelta).updateRight(l -> l + GAP);
 
-        if (leaveChars.right >= Math.max(addGapLeft.right, addGapRight.right)) {
-            var leftChars = leaveChars.update(tri -> new Triplet<>(
-                    tri.left + leftProtein.charAt(i),
-                    tri.middle + leftProtein.charAt(j),
-                    tri.right)
-            );
-            memoizer.get(i).put(j, leftChars);
-            return leftChars;
-        } else if (addGapLeft.right >= Math.max(leaveChars.right, addGapRight.right)) {
-            var addedGapLeft = addGapLeft.update(tri -> new Triplet<>(
-                    tri.left + GAP,
-                    tri.middle + rightProtein.charAt(j),
-                    tri.right)
-            );
-            memoizer.get(i).put(j, addedGapLeft);
-            return addedGapLeft;
+        var addGapRight = align(i, j - 1).updateLeft(cost -> cost + rightDelta).updateRight(l -> l + GAP);
+
+        if (leaveChars.left >= Math.max(addGapLeft.left, addGapRight.left)) {
+            memoizer.get(i).put(j, leaveChars);
+            return leaveChars;
+        } else if (addGapLeft.left >= Math.max(leaveChars.left, addGapRight.left)) {
+            memoizer.get(i).put(j, addGapLeft);
+            return addGapLeft;
         } else {
-            var addedGapRight = addGapRight.update(tri -> new Triplet<>(
-                    tri.left + leftProtein.charAt(i),
-                    tri.middle + GAP,
-                    tri.right)
-            );
-            memoizer.get(i).put(j, addedGapRight);
-            return addedGapRight;
+            memoizer.get(i).put(j, addGapRight);
+            return addGapRight;
         }
     }
 
-    public AlignedSequence align(Species left, Species right) {
+    private Pair<Integer, String> align(String source, String destination) {
         memoizer = new TreeMap<>();
-        for (int i = 1; i < left.protein.length() + 1; i++) {
+        for (int i = 1; i < source.length() + 1; i++) {
             memoizer.put(i, new TreeMap<>());
         }
-        leftProtein = " " + left.protein;
-        rightProtein = " " + right.protein;
-        var result = align(left.protein.length(), right.protein.length());
-        return new AlignedSequence(left, right, result.left, result.middle, result.right);
+        leftProtein = " " + source;
+        rightProtein = " " + destination;
+
+        var result = align(source.length(), destination.length());
+        var cost = result.left;
+        StringBuilder alignedProtein = new StringBuilder(result.right);
+
+        //Pad the protein to fit size of destination Species protein.
+        var maxLength = Math.max(source.length(), destination.length());
+        for (int i = alignedProtein.length(); i < maxLength; i++) {
+            alignedProtein.insert(0, "*");
+        }
+        return new Pair<>(cost, alignedProtein.toString());
+    }
+
+    private AlignedSequence align(Species left, Species right) {
+        var alignLeft = align(left.protein, right.protein);
+        var alignRight = align(right.protein, left.protein);
+        if (!alignLeft.left.equals(alignRight.left)) {
+            throw new IllegalStateException("It should not be possible to get to different optimal costs.");
+        }
+        return new AlignedSequence(left, right, alignLeft.right, alignRight.right, alignLeft.left);
     }
 
     @Override
@@ -95,6 +103,7 @@ public class TopDownSequenceAligner implements SequenceAligner {
                 alignedSequences.add(align(left, right));
             }
         }
+        alignedSequences.sort(Comparator.comparing(a -> a.source.name));
         return alignedSequences;
     }
 }

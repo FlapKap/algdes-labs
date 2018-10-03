@@ -7,9 +7,34 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.BiConsumer;
 
 public class Main {
+
+    private static void printAlignedSequences(List<AlignedSequence> alignedSequences) {
+        for (var seq : alignedSequences) {
+            System.out.printf(
+                    "%s--%s: %d\n%s\n%s\n",
+                    seq.source.name,
+                    seq.destination.name,
+                    seq.cost,
+                    seq.leftAlign,
+                    seq.rightAlign
+            );
+        }
+//        var maxChars = 70;
+//        for (var alignedSeq : alignedSequences) {
+//            System.out.printf("%s--%s: %d\n", alignedSeq.source.name, alignedSeq.destination.name, alignedSeq.cost);
+//            int i = 0;
+//            var seq = alignedSeq.sequence;
+//            while (i < seq.length() - maxChars) {
+//                System.out.printf("%s\n", seq.substring(i, i + maxChars));
+//                i += maxChars;
+//            }
+//            System.out.printf("%s\n", seq.substring(i));
+//        }
+    }
 
     private static BiConsumer<String, InputStream> runForFile(CostMatrix costMatrix) {
         return (filename, stream) -> {
@@ -21,11 +46,8 @@ public class Main {
                                                                 //Or make your own main method!
 
             var alignedSeqs = sequenceAligner.alignSequences(costMatrix, species);
-            for (var alignedSeq : alignedSeqs) {
-                System.out.printf("%s-%s\n", alignedSeq.left.name, alignedSeq.right.name);
-                System.out.printf("Cost: %d\n", alignedSeq.cost);
-                System.out.printf("Final leftAlignment: %s\n", alignedSeq.leftAlignment);
-            }
+
+            printAlignedSequences(alignedSeqs);
         };
     }
 
