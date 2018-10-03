@@ -4,10 +4,10 @@ package gorilla;
  * An immutable class for containing the results of a sequence aligner
  */
 public class AlignedSequence {
-    final Species left;
-    final Species right;
-    final String sequence;
-    final Integer cost;
+    public final Species left;
+    public final Species right;
+    public final String sequence;
+    public final Integer cost;
 
     /**
      * Constructor

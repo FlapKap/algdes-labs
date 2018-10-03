@@ -25,6 +25,10 @@ public class Pair<A, B> {
         return new Pair<>(this.left, updater.apply(this.left, this.right));
     }
 
+    public Pair<A, B> update(BiFunction<A, B, Pair<A, B>> updater) {
+        return updater.apply(this.left, this.right);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

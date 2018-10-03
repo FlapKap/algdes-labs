@@ -24,6 +24,7 @@ public class SpeciesParser {
                 protein = new StringBuilder();
             }
         }
+        species.addFirst(new Species(name, protein.toString()));
         return species;
     }
 }

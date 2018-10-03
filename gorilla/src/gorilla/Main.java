@@ -22,7 +22,7 @@ public class Main {
 
             var alignedSeqs = sequenceAligner.alignSequences(costMatrix, species);
             for (var alignedSeq : alignedSeqs) {
-                System.out.printf("%s-%s\n", alignedSeq.left, alignedSeq.right);
+                System.out.printf("%s-%s\n", alignedSeq.left.name, alignedSeq.right.name);
                 System.out.printf("Cost: %d\n", alignedSeq.cost);
                 System.out.printf("Final sequence: %s\n", alignedSeq.sequence);
             }
