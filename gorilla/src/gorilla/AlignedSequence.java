@@ -1,12 +1,13 @@
 package gorilla;
 
 /**
- * An immutable class for containing the results of a sequence aligner
+ * An immutable class for containing the results of a leftAlignment aligner
  */
 public class AlignedSequence {
     public final Species left;
     public final Species right;
-    public final String sequence;
+    public final String leftAlignment;
+    public final String rightAlignment;
     public final Integer cost;
 
     /**
@@ -15,13 +16,14 @@ public class AlignedSequence {
      *
      * @param left     the species compared from
      * @param right    the species compared to
-     * @param sequence the final protein sequence (with possible gaps characters '*')
+     * @param leftAlignment the final protein leftAlignment (with possible gaps characters '*')
      * @param cost     the final cost of the protein alignment
      */
-    public AlignedSequence(Species left, Species right, String sequence, Integer cost) {
+    public AlignedSequence(Species left, Species right, String leftAlignment, String rightAlignment, Integer cost) {
         this.left = left;
         this.right = right;
-        this.sequence = sequence;
+        this.leftAlignment = leftAlignment;
+        this.rightAlignment = rightAlignment;
         this.cost = cost;
     }
 }

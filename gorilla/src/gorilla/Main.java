@@ -24,7 +24,7 @@ public class Main {
             for (var alignedSeq : alignedSeqs) {
                 System.out.printf("%s-%s\n", alignedSeq.left.name, alignedSeq.right.name);
                 System.out.printf("Cost: %d\n", alignedSeq.cost);
-                System.out.printf("Final sequence: %s\n", alignedSeq.sequence);
+                System.out.printf("Final leftAlignment: %s\n", alignedSeq.leftAlignment);
             }
         };
     }
@@ -32,7 +32,7 @@ public class Main {
     public static void main(String[] args) throws FileNotFoundException {
         if (args.length < 2) {
             System.out.println(
-                    "Usage of this program: java Main <Path to cost matrix file> <One or more paths to sequence files>"
+                    "Usage of this program: java Main <Path to cost matrix file> <One or more paths to leftAlignment files>"
             );
             return;
         }

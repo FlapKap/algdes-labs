@@ -11,50 +11,76 @@ import java.util.*;
 
 public class TopDownSequenceAligner implements SequenceAligner {
 
-    private static char GAP = '*';
-
     private CostMatrix costMatrix;
 
-    private Map<Integer, Pair<String, Integer>> memoizer;
+    private Map<Integer, Map<Integer, Triplet<String, String, Integer>>> memoizer;
 
-    public TopDownSequenceAligner() {
-        memoizer = new HashMap<>();
-    }
+    private String leftProtein;
+    private String rightProtein;
 
-    private Pair<Character, String> consOfString(String s) {
-        if (s.isEmpty()) {
-            return new Pair<>(GAP, s);
+    public Triplet<String, String, Integer> align(int i, int j) {
+        if (i == 0 && j == 0) {
+            return new Triplet<>("", "", 0);
+        }
+        if (memoizer.containsKey(i) && memoizer.get(i).containsKey(j)) {
+            return memoizer.get(i).get(j);
+        }
+        char GAP = '*';
+
+        if (i == 0) {
+            var delta = costMatrix.getCost(rightProtein.charAt(j), GAP);
+            return new Triplet<>("", "" + GAP, j * delta);
+        }
+        if (j == 0) {
+            var delta = costMatrix.getCost(leftProtein.charAt(i), GAP);
+            return new Triplet<>("" + GAP, "", i * delta);
+        }
+        var leftDelta = costMatrix.getCost(leftProtein.charAt(i), GAP);
+        var rightDelta = costMatrix.getCost(rightProtein.charAt(j), GAP);
+
+        var alpha = costMatrix.getCost(leftProtein.charAt(i), rightProtein.charAt(j));
+        var leaveChars = align(i - 1, j - 1).updateRight(cost -> cost + alpha);
+
+        var addGapLeft = align(i - 1, j).updateRight(cost -> cost + leftDelta);
+
+        var addGapRight = align(i, j - 1).updateRight(cost -> cost + rightDelta);
+
+        if (leaveChars.right >= Math.max(addGapLeft.right, addGapRight.right)) {
+            var leftChars = leaveChars.update(tri -> new Triplet<>(
+                    tri.left + leftProtein.charAt(i),
+                    tri.middle + leftProtein.charAt(j),
+                    tri.right)
+            );
+            memoizer.get(i).put(j, leftChars);
+            return leftChars;
+        } else if (addGapLeft.right >= Math.max(leaveChars.right, addGapRight.right)) {
+            var addedGapLeft = addGapLeft.update(tri -> new Triplet<>(
+                    tri.left + GAP,
+                    tri.middle + rightProtein.charAt(j),
+                    tri.right)
+            );
+            memoizer.get(i).put(j, addedGapLeft);
+            return addedGapLeft;
         } else {
-            return new Pair<>(s.charAt(0), (s.length() > 1) ? s.substring(1) : "");
+            var addedGapRight = addGapRight.update(tri -> new Triplet<>(
+                    tri.left + leftProtein.charAt(i),
+                    tri.middle + GAP,
+                    tri.right)
+            );
+            memoizer.get(i).put(j, addedGapRight);
+            return addedGapRight;
         }
     }
 
-    private Pair<String, Integer> align(Pair<String, Integer> acc, String left, String right) {
-        int inputHash = Objects.hash(acc, left, right);
-        if (memoizer.containsKey(inputHash)) {
-            return memoizer.get(inputHash);
+    public AlignedSequence align(Species left, Species right) {
+        memoizer = new TreeMap<>();
+        for (int i = 1; i < left.protein.length() + 1; i++) {
+            memoizer.put(i, new TreeMap<>());
         }
-        if (left.isEmpty() && right.isEmpty()) {
-            return acc;
-        }
-        var leftCons = consOfString(left);
-        var rightCons = consOfString(right);
-        var x = leftCons.left;
-        var xs = leftCons.right;
-        var y = rightCons.left;
-        var ys = rightCons.right;
-
-        //Something is still not right here...
-        var p1 = align(new Pair<>(acc.left + GAP, acc.right + costMatrix.getCost(x, GAP)), xs, ys);
-        var p2 = align(new Pair<>(acc.left + GAP, acc.right + costMatrix.getCost(y, GAP)), xs, ys );
-        var p3 = align(new Pair<>(acc.left + x, acc.right + costMatrix.getCost(x, y)), xs, ys);
-
-        var opt = List.of(p1, p2, p3)
-                .stream()
-                .max(Comparator.comparingInt(pair -> pair.right))
-                .orElseThrow();
-        memoizer.put(inputHash, opt);
-        return opt;
+        leftProtein = " " + left.protein;
+        rightProtein = " " + right.protein;
+        var result = align(left.protein.length(), right.protein.length());
+        return new AlignedSequence(left, right, result.left, result.middle, result.right);
     }
 
     @Override
@@ -66,8 +92,7 @@ public class TopDownSequenceAligner implements SequenceAligner {
                 if (left.equals(right)) {
                     continue;
                 }
-                var alignment = align(new Pair<>("", 0), left.protein, right.protein);
-                alignedSequences.add(new AlignedSequence(left, right, alignment.left, alignment.right));
+                alignedSequences.add(align(left, right));
             }
         }
         return alignedSequences;

@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -55,7 +54,7 @@ class TopDownSequenceAlignerTest {
         assertTrue(
             alignedSeqs.stream().anyMatch(as ->
                 as.left.name.equals("s0") &&
-                as.sequence.equals("BB") &&
+                as.leftAlignment.equals("BB") &&
                 as.cost.equals(-1)
             ),
             "Aligned sequences contain s0-s1 -> AB, -1"
@@ -63,7 +62,7 @@ class TopDownSequenceAlignerTest {
         assertTrue(
             alignedSeqs.stream().anyMatch(as ->
                 as.left.name.equals("s1") &&
-                as.sequence.equals("AB") &&
+                as.leftAlignment.equals("AB") &&
                 as.cost.equals(-1)
             ),
             "Aligned sequences contain s1-s0 -> BB, -1"

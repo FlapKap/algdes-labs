@@ -1,6 +1,7 @@
 package util.jon;
 
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Utility class for having triplets of values.
@@ -9,14 +10,30 @@ import java.util.Objects;
  * @param <C> The type of the right value.
  */
 public class Triplet<A, B, C> {
-    final A left;
-    final B middle;
-    final C right;
+    public final A left;
+    public final B middle;
+    public final C right;
 
     public Triplet(A left, B middle, C right) {
         this.left = left;
         this.middle = middle;
         this.right = right;
+    }
+
+    public Triplet<A, B, C> update(Function<Triplet<A, B, C>, Triplet<A, B, C>> updater) {
+        return updater.apply(this);
+    }
+
+    public Triplet<A, B, C> updateLeft(Function<A, A> updater) {
+        return new Triplet<>(updater.apply(left), middle, right);
+    }
+
+    public Triplet<A, B, C> updateMiddle(Function<B, B> updater) {
+        return new Triplet<>(left, updater.apply(middle), right);
+    }
+
+    public Triplet<A, B, C> updateRight(Function<C, C> updater) {
+        return new Triplet<>(left, middle, updater.apply(right));
     }
 
     @Override
