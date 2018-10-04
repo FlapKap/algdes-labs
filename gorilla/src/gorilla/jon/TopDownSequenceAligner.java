@@ -84,16 +84,7 @@ public class TopDownSequenceAligner implements SequenceAligner {
         String leftProtein = " " + source;
         String rightProtein = " " + destination;
 
-        var result = align(source.length(), destination.length(), new AlignmentEnvironment(leftProtein, rightProtein));
-        var cost = result.left;
-        StringBuilder alignedProtein = new StringBuilder(result.right);
-
-        //Pad the protein to fit size of destination Species protein.
-        var maxLength = Math.max(source.length(), destination.length());
-        for (int i = alignedProtein.length(); i < maxLength; i++) {
-            alignedProtein.insert(0, "*");
-        }
-        return new Pair<>(cost, alignedProtein.toString());
+        return align(source.length(), destination.length(), new AlignmentEnvironment(leftProtein, rightProtein));
     }
 
     private AlignedSequence align(Species left, Species right) {
