@@ -9,6 +9,9 @@ import util.jon.Triplet;
 import util.jon.Utils;
 
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static java.util.List.*;
 
@@ -20,6 +23,25 @@ public class TopDownSequenceAligner implements SequenceAligner {
 
     private String leftProtein;
     private String rightProtein;
+
+    public enum SwitchMode {
+        LEAVE_LEFT_RIGHT,
+        LEAVE_RIGHT_LEFT,
+        LEFT_LEAVE_RIGHT,
+        LEFT_RIGHT_LEAVE,
+        RIGHT_LEFT_LEAVE,
+        RIGHT_LEAVE_LEFT
+    }
+
+    private SwitchMode switchMode;
+
+    public TopDownSequenceAligner(SwitchMode switchMode) {
+        this.switchMode = switchMode;
+    }
+
+    public TopDownSequenceAligner() {
+        this(SwitchMode.LEAVE_LEFT_RIGHT);
+    }
 
     private Pair<Integer, String> align(int i, int j) {
         if (i == 0 && j == 0) {
@@ -50,15 +72,42 @@ public class TopDownSequenceAligner implements SequenceAligner {
 
         var addGapRight = align(i, j - 1).updateLeft(cost -> cost + rightDelta).updateRight(l -> l + GAP);
 
-        if (leaveChars.left >= Math.max(addGapLeft.left, addGapRight.left)) {
-            memoizer.get(i).put(j, leaveChars);
-            return leaveChars;
-        } else if (addGapLeft.left >= Math.max(leaveChars.left, addGapRight.left)) {
-            memoizer.get(i).put(j, addGapLeft);
-            return addGapLeft;
-        } else {
-            memoizer.get(i).put(j, addGapRight);
-            return addGapRight;
+        Function<
+                Triplet<
+                        Pair<Integer, String>,
+                        Pair<Integer, String>,
+                        Pair<Integer, String>
+                >,
+                Pair<Integer, String>
+        > takeMaxCase = (triplet) -> {
+            final var first = triplet.left;
+            final var second = triplet.middle;
+            final var third = triplet.right;
+            if (first.left >= Math.max(addGapLeft.left, addGapRight.left)) {
+                memoizer.get(i).put(j, first);
+                return first;
+            } else if (second.left >= Math.max(first.left, third.left)) {
+                memoizer.get(i).put(j, second);
+                return second;
+            } else {
+                memoizer.get(i).put(j, third);
+                return third;
+            }
+        };
+
+        switch(switchMode) {
+            case LEAVE_LEFT_RIGHT:
+                return takeMaxCase.apply(Triplet.of(leaveChars, addGapLeft, addGapRight));
+            case LEAVE_RIGHT_LEFT:
+                return takeMaxCase.apply(Triplet.of(leaveChars, addGapRight, addGapLeft));
+            case LEFT_LEAVE_RIGHT:
+                return takeMaxCase.apply(Triplet.of(addGapLeft, leaveChars, addGapRight));
+            case LEFT_RIGHT_LEAVE:
+                return takeMaxCase.apply(Triplet.of(addGapLeft, addGapRight, leaveChars));
+            case RIGHT_LEAVE_LEFT:
+                return takeMaxCase.apply(Triplet.of(addGapRight, leaveChars, addGapLeft));
+            default:
+                return takeMaxCase.apply(Triplet.of(addGapRight, addGapLeft, leaveChars));
         }
     }
 

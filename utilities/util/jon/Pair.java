@@ -53,6 +53,6 @@ public class Pair<A, B> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(left, right);
+        return left.hashCode() + right.hashCode();
     }
 }

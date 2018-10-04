@@ -8,6 +8,7 @@ import util.jon.Triplet;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +81,7 @@ class TopDownSequenceAlignerTest {
     private String getShortName(Species species) {
         return species.name.split("\\s+")[0];
     }
+
     private Pair<Pair<String, String>, Pair<String, String>> getShortNameCombinations(AlignedSequence aSeq) {
         return Pair.of(
                 Pair.of(getShortName(aSeq.source), getShortName(aSeq.destination)),
@@ -87,11 +89,18 @@ class TopDownSequenceAlignerTest {
         );
     }
 
-    private Predicate<AlignedSequence> aSeqInOutput (Map<Pair<String, String>, Triplet<Integer, String, String>> oA) {
+    private boolean oneCombinationMatches(String expectedLeft, String expectedRight, String actualLeft, String actualRight) {
+        return
+                (expectedLeft.trim().equals(actualLeft.trim()) && expectedRight.trim().equals(actualRight.trim()))
+                ||
+                (expectedLeft.trim().equals(actualRight.trim()) && expectedRight.trim().equals(actualLeft.trim()));
+    }
+
+    private Predicate<AlignedSequence> aSeqInOutput(Map<Pair<String, String>, Triplet<Integer, String, String>> oA) {
         return (aSeq -> {
             final var combinations = getShortNameCombinations(aSeq);
             if (!oA.containsKey(combinations.left) || !oA.containsKey(combinations.right)) {
-                return true;
+                return false;
             }
             final var value = (oA.containsKey(combinations.left)) ? oA.get(combinations.left) : oA.get(combinations.right);
             return aSeq.cost.equals(value.left) &&
@@ -101,16 +110,27 @@ class TopDownSequenceAlignerTest {
                     ) <= Math.max(
                             aSeq.source.protein.length(),
                             aSeq.destination.protein.length()
-                    );
+                    ) &&
+                    oneCombinationMatches(value.middle, value.right, aSeq.leftAlign, aSeq.rightAlign);
         });
     }
 
+    private boolean compareAlignWithMode(Map<Pair<String, String>, Triplet<Integer, String, String>> outputAlignments,
+                                         CostMatrix matrix,
+                                         List<Species> species,
+                                         TopDownSequenceAligner.SwitchMode switchMode) {
+        var aligner = new TopDownSequenceAligner(switchMode);
+        var alignedSequences = aligner.alignSequences(matrix, species);
+        //TODO: Finish implementing this test.
+        return alignedSequences.stream()
+                .anyMatch(aSeqInOutput(outputAlignments));
+    }
+
     @Test
-    void compareAlignmentToGivenOutput() throws FileNotFoundException {
+    void oneSwitchModeMathcesThores() throws FileNotFoundException {
         var outputStream = new FileInputStream("./gorilla/data/HbB_FASTAs-out.txt");
         var outputReader = new InputReader(outputStream);
         var outputAlignments = new HashMap<Pair<String, String>, Triplet<Integer, String, String>>();
-
         while (outputReader.ready()) {
             var match = outputReader.findNext("^(\\w+)--(\\w+): (\\d+).*$");
             var names = new Pair<>(match.get(1), match.get(2));
@@ -120,16 +140,16 @@ class TopDownSequenceAlignerTest {
             var rightSeq = outputReader.findNext(seqPat).get(1);
             outputAlignments.put(names, new Triplet<>(cost, leftSeq, rightSeq));
         }
-
         var matrixStream = new FileInputStream("./gorilla/data/BLOSUM62.txt");
         var matrix = CostMatrixParser.parseCostMatrix(matrixStream);
         var speciesStream = new FileInputStream("./gorilla/data/HbB_FASTAs-in.txt");
         var species = SpeciesParser.parseSpecies(speciesStream);
-        var alignedSequences = testAligner.alignSequences(matrix, species);
 
-        //TODO: Finish implementing this test.
-        assertTrue(alignedSequences.stream()
-                .allMatch(aSeqInOutput(outputAlignments)),
-                "Every alignedSequence matches the costs of the output file.");
+        var thoreMode = Arrays.stream(TopDownSequenceAligner.SwitchMode.values())
+                .parallel()
+                .filter(s -> compareAlignWithMode(outputAlignments, matrix, species, s))
+                .findFirst()
+                .orElseThrow();
+        System.out.printf("ThoreMode: %s", thoreMode.name());
     }
 }

@@ -5,6 +5,7 @@ import java.util.function.Function;
 
 /**
  * Utility class for having triplets of values.
+ *
  * @param <A> The type of the left value.
  * @param <B> The type of the middle value.
  * @param <C> The type of the right value.
@@ -34,6 +35,10 @@ public class Triplet<A, B, C> {
 
     public Triplet<A, B, C> updateRight(Function<C, C> updater) {
         return new Triplet<>(left, middle, updater.apply(right));
+    }
+
+    public static <L, M, R> Triplet<L, M, R> of(L left, M middle, R right) {
+        return new Triplet<>(left, middle, right);
     }
 
     @Override
