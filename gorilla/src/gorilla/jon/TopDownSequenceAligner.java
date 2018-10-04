@@ -44,7 +44,7 @@ public class TopDownSequenceAligner implements SequenceAligner {
 
         var alpha = costMatrix.getCost(leftProtein.charAt(i), rightProtein.charAt(j));
 
-        var leaveChars = align(i - 1, j - 1).updateLeft(cost -> cost + alpha).updateRight(l -> l + rightProtein.charAt(j));
+        var leaveChars = align(i - 1, j - 1).updateLeft(cost -> cost + alpha).updateRight(l -> l + leftProtein.charAt(i));
 
         var addGapLeft = align(i - 1, j).updateLeft(cost -> cost + leftDelta).updateRight(l -> l + GAP);
 

@@ -38,6 +38,10 @@ public class Pair<A, B> {
         return updater.apply(left, right);
     }
 
+    public static <L, R> Pair<L, R> of(L left, R right) {
+        return new Pair<>(left, right);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
