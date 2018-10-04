@@ -19,8 +19,8 @@ public class Main {
                     seq.source.name,
                     seq.destination.name,
                     seq.cost,
-                    seq.leftAlign.replace('*', '-'),
-                    seq.rightAlign.replace('*', '-')
+                    seq.rightAlign.replace('*', '-'),
+                    seq.leftAlign.replace('*', '-')
             );
         }
 //        var maxChars = 70;

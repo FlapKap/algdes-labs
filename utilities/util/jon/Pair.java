@@ -6,6 +6,7 @@ import java.util.function.Function;
 
 /**
  * Utility class for holding pairs.
+ *
  * @param <A> Whatever you want in the left side of the pair.
  * @param <B> Whatever you want in the right side of the pair.
  */
@@ -40,6 +41,12 @@ public class Pair<A, B> {
 
     public static <L, R> Pair<L, R> of(L left, R right) {
         return new Pair<>(left, right);
+    }
+
+    public boolean equivalent(Pair<A, B> other) {
+        return (left.equals(other.left) && right.equals(other.right))
+                ||
+                (left.equals(other.right) && right.equals(other.left));
     }
 
     @Override

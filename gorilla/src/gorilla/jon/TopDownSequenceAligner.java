@@ -9,9 +9,9 @@ import util.jon.Triplet;
 import util.jon.Utils;
 
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.List.*;
 
@@ -19,107 +19,72 @@ public class TopDownSequenceAligner implements SequenceAligner {
 
     private CostMatrix costMatrix;
 
-    private Map<Integer, Map<Integer, Pair<Integer, String>>> memoizer;
+    private class AlignmentEnvironment {
+        final String leftProtein;
+        final String rightProtein;
+        final Map<Integer, Map<Integer, Pair<Integer, String>>> memoizer;
 
-    private String leftProtein;
-    private String rightProtein;
-
-    public enum SwitchMode {
-        LEAVE_LEFT_RIGHT,
-        LEAVE_RIGHT_LEFT,
-        LEFT_LEAVE_RIGHT,
-        LEFT_RIGHT_LEAVE,
-        RIGHT_LEFT_LEAVE,
-        RIGHT_LEAVE_LEFT
+        public AlignmentEnvironment(String leftProtein, String rightProtein) {
+            this.leftProtein = leftProtein;
+            this.rightProtein = rightProtein;
+            memoizer = new TreeMap<>();
+            for (int i = 1; i < leftProtein.length() + 1; i++) {
+                memoizer.put(i, new TreeMap<>());
+            }
+        }
     }
 
-    private SwitchMode switchMode;
-
-    public TopDownSequenceAligner(SwitchMode switchMode) {
-        this.switchMode = switchMode;
-    }
-
-    public TopDownSequenceAligner() {
-        this(SwitchMode.LEAVE_LEFT_RIGHT);
-    }
-
-    private Pair<Integer, String> align(int i, int j) {
+    private Pair<Integer, String> align(int i, int j, AlignmentEnvironment env) {
         if (i == 0 && j == 0) {
             return new Pair<>(0, "");
         }
-        if (memoizer.containsKey(i) && memoizer.get(i).containsKey(j)) {
-            return memoizer.get(i).get(j);
+        if (env.memoizer.containsKey(i) && env.memoizer.get(i).containsKey(j)) {
+            return env.memoizer.get(i).get(j);
         }
         char GAP = '*';
         String GAP_S = GAP + "";
 
         if (i == 0) {
-            var delta = costMatrix.getCost(rightProtein.charAt(j), GAP);
+            var delta = costMatrix.getCost(env.rightProtein.charAt(j), GAP);
             return new Pair<>(j * delta, GAP_S);
         }
         if (j == 0) {
-            var delta = costMatrix.getCost(leftProtein.charAt(i), GAP);
+            var delta = costMatrix.getCost(env.leftProtein.charAt(i), GAP);
             return new Pair<>(i * delta, GAP_S);
         }
-        var leftDelta = costMatrix.getCost(leftProtein.charAt(i), GAP);
-        var rightDelta = costMatrix.getCost(rightProtein.charAt(j), GAP);
+        var leftDelta = costMatrix.getCost(env.leftProtein.charAt(i), GAP);
+        var rightDelta = costMatrix.getCost(env.rightProtein.charAt(j), GAP);
 
-        var alpha = costMatrix.getCost(leftProtein.charAt(i), rightProtein.charAt(j));
+        var alpha = costMatrix.getCost(env.leftProtein.charAt(i), env.rightProtein.charAt(j));
 
-        var leaveChars = align(i - 1, j - 1).updateLeft(cost -> cost + alpha).updateRight(l -> l + leftProtein.charAt(i));
+        var leaveChars = align(i - 1, j - 1, env).updateLeft(cost -> cost + alpha).updateRight(l -> l + env.leftProtein.charAt(i));
 
-        var addGapLeft = align(i - 1, j).updateLeft(cost -> cost + leftDelta).updateRight(l -> l + GAP);
+        var addGapLeft = align(i - 1, j, env).updateLeft(cost -> cost + leftDelta).updateRight(l -> l + GAP);
 
-        var addGapRight = align(i, j - 1).updateLeft(cost -> cost + rightDelta).updateRight(l -> l + GAP);
+        var addGapRight = align(i, j - 1, env).updateLeft(cost -> cost + rightDelta).updateRight(l -> l + GAP);
 
-        Function<
-                Triplet<
-                        Pair<Integer, String>,
-                        Pair<Integer, String>,
-                        Pair<Integer, String>
-                >,
-                Pair<Integer, String>
-        > takeMaxCase = (triplet) -> {
-            final var first = triplet.left;
-            final var second = triplet.middle;
-            final var third = triplet.right;
-            if (first.left >= Math.max(addGapLeft.left, addGapRight.left)) {
-                memoizer.get(i).put(j, first);
-                return first;
-            } else if (second.left >= Math.max(first.left, third.left)) {
-                memoizer.get(i).put(j, second);
-                return second;
-            } else {
-                memoizer.get(i).put(j, third);
-                return third;
-            }
-        };
-
-        switch(switchMode) {
-            case LEAVE_LEFT_RIGHT:
-                return takeMaxCase.apply(Triplet.of(leaveChars, addGapLeft, addGapRight));
-            case LEAVE_RIGHT_LEFT:
-                return takeMaxCase.apply(Triplet.of(leaveChars, addGapRight, addGapLeft));
-            case LEFT_LEAVE_RIGHT:
-                return takeMaxCase.apply(Triplet.of(addGapLeft, leaveChars, addGapRight));
-            case LEFT_RIGHT_LEAVE:
-                return takeMaxCase.apply(Triplet.of(addGapLeft, addGapRight, leaveChars));
-            case RIGHT_LEAVE_LEFT:
-                return takeMaxCase.apply(Triplet.of(addGapRight, leaveChars, addGapLeft));
-            default:
-                return takeMaxCase.apply(Triplet.of(addGapRight, addGapLeft, leaveChars));
+        //Notice the odd arrangement of the statements.
+        //This was done to match Thore's outputs.
+        //My outputs were different, originally, if used (leaveChars.left >= Math.max(...)) in the first clause.
+        //They were still right tho, but I thought that I would make it easy.
+        if (leaveChars.left > Math.max(addGapLeft.left, addGapRight.left)) {
+            env.memoizer.get(i).put(j, leaveChars);
+            return leaveChars;
+        } else if (addGapLeft.left >= Math.max(leaveChars.left, addGapRight.left)) {
+            env.memoizer.get(i).put(j, addGapLeft);
+            return addGapLeft;
+        } else {
+            env.memoizer.get(i).put(j, addGapRight);
+            return addGapRight;
         }
     }
 
     private Pair<Integer, String> align(String source, String destination) {
-        memoizer = new TreeMap<>();
-        for (int i = 1; i < source.length() + 1; i++) {
-            memoizer.put(i, new TreeMap<>());
-        }
-        leftProtein = " " + source;
-        rightProtein = " " + destination;
 
-        var result = align(source.length(), destination.length());
+        String leftProtein = " " + source;
+        String rightProtein = " " + destination;
+
+        var result = align(source.length(), destination.length(), new AlignmentEnvironment(leftProtein, rightProtein));
         var cost = result.left;
         StringBuilder alignedProtein = new StringBuilder(result.right);
 
@@ -135,7 +100,7 @@ public class TopDownSequenceAligner implements SequenceAligner {
         var alignLeft = align(left.protein, right.protein);
         var alignRight = align(right.protein, left.protein);
         if (!alignLeft.left.equals(alignRight.left)) {
-            throw new IllegalStateException("It should not be possible to get to different optimal costs.");
+            throw new IllegalStateException("It should not be possible to get two different optimal costs.");
         }
         return new AlignedSequence(left, right, alignLeft.right, alignRight.right, alignLeft.left);
     }
@@ -143,16 +108,23 @@ public class TopDownSequenceAligner implements SequenceAligner {
     @Override
     public List<AlignedSequence> alignSequences(CostMatrix costMatrix, List<Species> speciesList) {
         this.costMatrix = costMatrix;
-        var alignedSequences = new ArrayList<AlignedSequence>(speciesList.size() * speciesList.size());
+        List<Pair<Species, Species>> pairings = new ArrayList<>(speciesList.size() * speciesList.size());
         for (var left : speciesList) {
             for (var right : speciesList) {
                 if (left.equals(right)) {
                     continue;
                 }
-                alignedSequences.add(align(left, right));
+                var pair = Pair.of(left, right);
+                if (pairings.stream().noneMatch(pair::equivalent)) {
+                    pairings.add(pair);
+                }
             }
         }
-        alignedSequences.sort(Comparator.comparing(a -> a.source.name));
-        return alignedSequences;
+        return pairings.stream()
+                .distinct()
+                .parallel()
+                .map(p -> align(p.left, p.right))
+                .sorted(Comparator.comparing(aSeq -> aSeq.source.name))
+                .collect(Collectors.toList());
     }
 }

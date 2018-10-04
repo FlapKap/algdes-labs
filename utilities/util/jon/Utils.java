@@ -2,7 +2,9 @@ package util.jon;
 
 import java.util.*;
 import java.util.function.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * A class for containing static utility functions.
@@ -104,5 +106,54 @@ public class Utils {
      */
     public static <S, T> S fold(S initialState, T[] array, BiFunction<S, T, S> folder) {
         return fold(initialState, Arrays.stream(array).iterator(), folder);
+    }
+
+    public static <A, B, R> Stream<R> zip(
+            Stream<A> streamA,
+            Stream<B> streamB,
+            BiFunction<? super A, ? super B, R> function
+    ) {
+        boolean isParallel = streamA.isParallel() || streamB.isParallel(); // same as Stream.concat
+        Spliterator<A> splitrA = streamA.spliterator();
+        Spliterator<B> splitrB = streamB.spliterator();
+        int characteristics =
+                splitrA.characteristics()
+                        & splitrB.characteristics()
+                        & (Spliterator.SIZED | Spliterator.ORDERED);
+        Iterator<A> itrA = Spliterators.iterator(splitrA);
+        Iterator<B> itrB = Spliterators.iterator(splitrB);
+        return StreamSupport.stream(
+                new Spliterators.AbstractSpliterator<R>(
+                        Math.min(splitrA.estimateSize(), splitrB.estimateSize()), characteristics) {
+                    @Override
+                    public boolean tryAdvance(Consumer<? super R> action) {
+                        if (itrA.hasNext() && itrB.hasNext()) {
+                            action.accept(function.apply(itrA.next(), itrB.next()));
+                            return true;
+                        }
+                        return false;
+                    }
+                },
+                isParallel)
+                .onClose(streamA::close)
+                .onClose(streamB::close);
+    }
+
+    @SafeVarargs
+    public static <T> Stream<List<T>> product(Stream<T>... streams) {
+        if (streams.length == 0) {
+            return Stream.empty();
+        }
+        List<List<T>> cartesian = streams[streams.length - 1].map(Collections::singletonList).collect(Collectors.toList());
+        for (int i = streams.length - 2; i >= 0; i--) {
+            final List<List<T>> previous = cartesian;
+            cartesian = streams[i].flatMap(x -> previous.stream().map(p -> {
+                final List<T> list = new ArrayList<T>(p.size() + 1);
+                list.add(x);
+                list.addAll(p);
+                return list;
+            })).collect(Collectors.toList());
+        }
+        return cartesian.stream();
     }
 }

@@ -1,6 +1,8 @@
 package gorilla.jon;
 
-import gorilla.*;
+import gorilla.CostMatrix;
+import gorilla.SequenceAligner;
+import gorilla.Species;
 import org.junit.jupiter.api.Test;
 import util.jon.InputReader;
 import util.jon.Pair;
@@ -8,12 +10,9 @@ import util.jon.Triplet;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,7 +29,7 @@ class TopDownSequenceAlignerTest {
             B -1 0  -2
             * -4 -2 0
      */
-    private final CostMatrix simpleCostMatrix = new CostMatrix(
+    CostMatrix costMatrix = new CostMatrix(
             Map.of(
                     'A', Map.of('A', 0, 'B', -1, 'C', -8, '*', -4),
                     'B', Map.of('A', -1, 'B', 0, 'C', -1, '*', -2),
@@ -39,7 +38,7 @@ class TopDownSequenceAlignerTest {
             )
     );
 
-    private final SequenceAligner testAligner = new TopDownSequenceAligner();
+    SequenceAligner testAligner = new TopDownSequenceAligner();
 
     @Test
     void alignSequencesTest() {
@@ -58,7 +57,7 @@ class TopDownSequenceAlignerTest {
          */
         var species = List.of(new Species("s0", "AB"), new Species("s1", "BB"));
 
-        var alignedSeqs = testAligner.alignSequences(simpleCostMatrix, species);
+        var alignedSeqs = testAligner.alignSequences(costMatrix, species);
 
         assertTrue(
                 alignedSeqs.stream().anyMatch(as ->
@@ -78,59 +77,12 @@ class TopDownSequenceAlignerTest {
         );
     }
 
-    private String getShortName(Species species) {
-        return species.name.split("\\s+")[0];
-    }
-
-    private Pair<Pair<String, String>, Pair<String, String>> getShortNameCombinations(AlignedSequence aSeq) {
-        return Pair.of(
-                Pair.of(getShortName(aSeq.source), getShortName(aSeq.destination)),
-                Pair.of(getShortName(aSeq.destination), getShortName(aSeq.source))
-        );
-    }
-
-    private boolean oneCombinationMatches(String expectedLeft, String expectedRight, String actualLeft, String actualRight) {
-        return
-                (expectedLeft.trim().equals(actualLeft.trim()) && expectedRight.trim().equals(actualRight.trim()))
-                ||
-                (expectedLeft.trim().equals(actualRight.trim()) && expectedRight.trim().equals(actualLeft.trim()));
-    }
-
-    private Predicate<AlignedSequence> aSeqInOutput(Map<Pair<String, String>, Triplet<Integer, String, String>> oA) {
-        return (aSeq -> {
-            final var combinations = getShortNameCombinations(aSeq);
-            if (!oA.containsKey(combinations.left) || !oA.containsKey(combinations.right)) {
-                return false;
-            }
-            final var value = (oA.containsKey(combinations.left)) ? oA.get(combinations.left) : oA.get(combinations.right);
-            return aSeq.cost.equals(value.left) &&
-                    Math.max(
-                            aSeq.leftAlign.length(),
-                            aSeq.rightAlign.length()
-                    ) <= Math.max(
-                            aSeq.source.protein.length(),
-                            aSeq.destination.protein.length()
-                    ) &&
-                    oneCombinationMatches(value.middle, value.right, aSeq.leftAlign, aSeq.rightAlign);
-        });
-    }
-
-    private boolean compareAlignWithMode(Map<Pair<String, String>, Triplet<Integer, String, String>> outputAlignments,
-                                         CostMatrix matrix,
-                                         List<Species> species,
-                                         TopDownSequenceAligner.SwitchMode switchMode) {
-        var aligner = new TopDownSequenceAligner(switchMode);
-        var alignedSequences = aligner.alignSequences(matrix, species);
-        //TODO: Finish implementing this test.
-        return alignedSequences.stream()
-                .anyMatch(aSeqInOutput(outputAlignments));
-    }
-
     @Test
-    void oneSwitchModeMathcesThores() throws FileNotFoundException {
+    void compareAlignmentToGivenOutput() throws FileNotFoundException {
         var outputStream = new FileInputStream("./gorilla/data/HbB_FASTAs-out.txt");
         var outputReader = new InputReader(outputStream);
         var outputAlignments = new HashMap<Pair<String, String>, Triplet<Integer, String, String>>();
+
         while (outputReader.ready()) {
             var match = outputReader.findNext("^(\\w+)--(\\w+): (\\d+).*$");
             var names = new Pair<>(match.get(1), match.get(2));
@@ -140,16 +92,11 @@ class TopDownSequenceAlignerTest {
             var rightSeq = outputReader.findNext(seqPat).get(1);
             outputAlignments.put(names, new Triplet<>(cost, leftSeq, rightSeq));
         }
-        var matrixStream = new FileInputStream("./gorilla/data/BLOSUM62.txt");
-        var matrix = CostMatrixParser.parseCostMatrix(matrixStream);
-        var speciesStream = new FileInputStream("./gorilla/data/HbB_FASTAs-in.txt");
-        var species = SpeciesParser.parseSpecies(speciesStream);
 
-        var thoreMode = Arrays.stream(TopDownSequenceAligner.SwitchMode.values())
-                .parallel()
-                .filter(s -> compareAlignWithMode(outputAlignments, matrix, species, s))
-                .findFirst()
-                .orElseThrow();
-        System.out.printf("ThoreMode: %s", thoreMode.name());
+        //TODO: Finish implementing this test.
+        assertTrue(false);
+
+        var matrixFile = new FileInputStream("./gorilla/data/BLOSUM62.txt");
+        var inputFile = new FileInputStream("./gorilla/data/HbB_FASTAs-in.txt");
     }
 }
