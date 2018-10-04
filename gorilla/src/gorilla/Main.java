@@ -23,17 +23,6 @@ public class Main {
                     seq.leftAlign.replace('*', '-')
             );
         }
-//        var maxChars = 70;
-//        for (var alignedSeq : alignedSequences) {
-//            System.out.printf("%s--%s: %d\n", alignedSeq.source.name, alignedSeq.destination.name, alignedSeq.cost);
-//            int i = 0;
-//            var seq = alignedSeq.sequence;
-//            while (i < seq.length() - maxChars) {
-//                System.out.printf("%s\n", seq.substring(i, i + maxChars));
-//                i += maxChars;
-//            }
-//            System.out.printf("%s\n", seq.substring(i));
-//        }
     }
 
     private static BiConsumer<String, InputStream> runForFile(CostMatrix costMatrix) {

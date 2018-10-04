@@ -124,7 +124,6 @@ public class TopDownSequenceAligner implements SequenceAligner {
                 .distinct()
                 .parallel()
                 .map(p -> align(p.left, p.right))
-                .sorted(Comparator.comparing(aSeq -> aSeq.source.name))
                 .collect(Collectors.toList());
     }
 }
