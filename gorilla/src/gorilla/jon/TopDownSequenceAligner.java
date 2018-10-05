@@ -22,7 +22,7 @@ public class TopDownSequenceAligner implements SequenceAligner {
     private class AlignmentEnvironment {
         final String leftProtein;
         final String rightProtein;
-        final Map<Integer, Map<Integer, Pair<Integer, String>>> memoizer;
+        final Map<Integer, Map<Integer, Triplet<Integer, String, String>>> memoizer;
 
         public AlignmentEnvironment(String leftProtein, String rightProtein) {
             this.leftProtein = leftProtein;
@@ -34,9 +34,9 @@ public class TopDownSequenceAligner implements SequenceAligner {
         }
     }
 
-    private Pair<Integer, String> align(int i, int j, AlignmentEnvironment env) {
+    private Triplet<Integer, String, String> align(int i, int j, AlignmentEnvironment env) {
         if (i == 0 && j == 0) {
-            return new Pair<>(0, "");
+            return new Triplet<>(0, "", "");
         }
         if (env.memoizer.containsKey(i) && env.memoizer.get(i).containsKey(j)) {
             return env.memoizer.get(i).get(j);
@@ -46,31 +46,40 @@ public class TopDownSequenceAligner implements SequenceAligner {
 
         if (i == 0) {
             var delta = costMatrix.getCost(env.rightProtein.charAt(j), GAP);
-            return new Pair<>(j * delta, GAP_S);
+            return new Triplet<>(j * delta, GAP_S, env.rightProtein.charAt(j)+"");
         }
         if (j == 0) {
             var delta = costMatrix.getCost(env.leftProtein.charAt(i), GAP);
-            return new Pair<>(i * delta, GAP_S);
+            return new Triplet<>(i * delta, env.leftProtein.charAt(i)+"", GAP_S);
         }
         var leftDelta = costMatrix.getCost(env.leftProtein.charAt(i), GAP);
         var rightDelta = costMatrix.getCost(env.rightProtein.charAt(j), GAP);
 
         var alpha = costMatrix.getCost(env.leftProtein.charAt(i), env.rightProtein.charAt(j));
 
-        var leaveChars = align(i - 1, j - 1, env).updateLeft(cost -> cost + alpha).updateRight(l -> l + env.leftProtein.charAt(i));
+        var leaveChars = align(i - 1, j - 1, env)
+                .updateLeft(cost -> cost + alpha)
+                .updateMiddle(l -> l + env.leftProtein.charAt(i))
+                .updateRight(r -> r + env.rightProtein.charAt(j));
 
-        var addGapLeft = align(i - 1, j, env).updateLeft(cost -> cost + leftDelta).updateRight(l -> l + GAP);
+        var addGapLeft = align(i - 1, j, env)
+                .updateLeft(cost -> cost + leftDelta)
+                .updateMiddle(l -> l + GAP)
+                .updateRight(r -> r + GAP);
 
-        var addGapRight = align(i, j - 1, env).updateLeft(cost -> cost + rightDelta).updateRight(l -> l + GAP);
+        var addGapRight = align(i, j - 1, env)
+                .updateLeft(cost -> cost + rightDelta)
+                .updateMiddle(l -> l + GAP)
+                .updateRight(r -> r + GAP);
 
         //Notice the odd arrangement of the statements.
         //This was done to match Thore's outputs.
         //My outputs were different, originally, if used (leaveChars.left >= Math.max(...)) in the first clause.
         //They were still right tho, but I thought that I would make it easy.
-        if (leaveChars.left > Math.max(addGapLeft.left, addGapRight.left)) {
+        if (leaveChars.left >= Math.max(addGapLeft.left, addGapRight.left)) {
             env.memoizer.get(i).put(j, leaveChars);
             return leaveChars;
-        } else if (addGapLeft.left >= Math.max(leaveChars.left, addGapRight.left)) {
+        } else if (addGapLeft.left > Math.max(leaveChars.left, addGapRight.left)) {
             env.memoizer.get(i).put(j, addGapLeft);
             return addGapLeft;
         } else {
@@ -79,21 +88,12 @@ public class TopDownSequenceAligner implements SequenceAligner {
         }
     }
 
-    private Pair<Integer, String> align(String source, String destination) {
-
-        String leftProtein = " " + source;
-        String rightProtein = " " + destination;
-
-        return align(source.length(), destination.length(), new AlignmentEnvironment(leftProtein, rightProtein));
-    }
-
     private AlignedSequence align(Species left, Species right) {
-        var alignLeft = align(left.protein, right.protein);
-        var alignRight = align(right.protein, left.protein);
-        if (!alignLeft.left.equals(alignRight.left)) {
-            throw new IllegalStateException("It should not be possible to get two different optimal costs.");
-        }
-        return new AlignedSequence(left, right, alignLeft.right, alignRight.right, alignLeft.left);
+        String leftProtein = " " + left.protein;
+        String rightProtein = " " + right.protein;
+        var startEnvironment = new AlignmentEnvironment(leftProtein, rightProtein);
+        var alignment = align(left.protein.length(), right.protein.length(), startEnvironment);
+        return new AlignedSequence(left, right, alignment.middle, alignment.right, alignment.left);
     }
 
     @Override

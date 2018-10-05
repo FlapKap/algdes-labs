@@ -34,7 +34,10 @@ public class Main {
             var sequenceAligner = new TopDownSequenceAligner(); //Replace with whatever implementation you use.
                                                                 //Or make your own main method!
 
+            var start = System.currentTimeMillis();
             var alignedSeqs = sequenceAligner.alignSequences(costMatrix, species);
+            var end = System.currentTimeMillis() - start;
+            System.out.printf("Aligned %d in %dms\n", alignedSeqs.size(), end);
 
             printAlignedSequences(alignedSeqs);
         };
