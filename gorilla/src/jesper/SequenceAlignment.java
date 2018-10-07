@@ -25,7 +25,7 @@ public class SequenceAlignment {
 		int[][] matrix = new int[24][24];
 		try {
 			Scanner scan = null;
-			File file = new File("BLOSUM62.txt");
+			File file = new File("../../data/BLOSUM62.txt");
 			scan = new Scanner(file);
 			Pattern pattern = Pattern.compile("(  [A-Z])+|  //*");
 			Pattern pattern2 = Pattern.compile("(\\s+-?\\d+)+");
