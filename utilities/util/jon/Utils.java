@@ -26,6 +26,25 @@ public class Utils {
         return result;
     }
 
+    public static <T> ArrayList<T> append(List<T> a, T ... elements) {
+        var result = new ArrayList<T>(a.size() + elements.length);
+        result.addAll(a);
+        result.addAll(Arrays.asList(elements));
+        return result;
+    }
+
+    public static <T> Set<T> concat(Set<T> a, Set<T> b) {
+        var result = new TreeSet<T>(a);
+        result.addAll(b);
+        return result;
+    }
+
+    public static <T> Set<T> append(Set<T> a, T ... elements) {
+        var result = new TreeSet<T>(a);
+        result.addAll(Arrays.asList(elements));
+        return result;
+    }
+
     /**
      * Sorts a list by a particular key.
      *
