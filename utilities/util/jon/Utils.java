@@ -2,10 +2,7 @@ package util.jon;
 
 import java.util.*;
 import java.util.function.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.stream.*;
 
 /**
  * A class for containing static utility functions.
@@ -36,14 +33,20 @@ public class Utils {
     }
 
     public static <T> Set<T> concat(Set<T> a, Set<T> b) {
-        var result = new TreeSet<T>(a);
+        var result = new HashSet<>(a);
         result.addAll(b);
+        return result;
+    }
+
+    public static <T> Set<T> append(Set<T> a, T element) {
+        var result = new HashSet<>(a);
+        result.add(element);
         return result;
     }
 
     @SafeVarargs
     public static <T> Set<T> append(Set<T> a, T ... elements) {
-        var result = new TreeSet<T>(a);
+        var result = new HashSet<>(a);
         result.addAll(Arrays.asList(elements));
         return result;
     }
@@ -144,6 +147,14 @@ public class Utils {
             return b;
         });
         return pairs.stream();
+    }
+
+    public static <T> Stream<T> reverse(Stream<T> stream) {
+        return stream.collect(Collector.of(
+                ArrayDeque<T>::new,
+                ArrayDeque::addFirst,
+                (d1, d2) -> {d2.addAll(d1); return d2;}
+        )).stream();
     }
 
     public static <A, B, R> Stream<R> zip(

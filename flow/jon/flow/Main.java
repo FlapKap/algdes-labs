@@ -11,10 +11,11 @@ public class Main {
         var labelsAndNetwork = NetworkParser.parseNetwork(inputStream);
         var labels = labelsAndNetwork.left;
         var network = labelsAndNetwork.right;
+        System.out.printf("Parsed network of size: %d\n", network.size);
         MinimumCutter minimumCutter = new MinimumCutter(network);
         var maxFlowMinCut = minimumCutter.minimumCut();
-        System.out.printf("Max-Flow determined to be %d", maxFlowMinCut.left);
-        System.out.println("Minimum-Cut determined to be:");
+        System.out.printf("Max-Flow determined to be: %d\n", maxFlowMinCut.left);
+        System.out.println("Minimum-Cut determined to be:\n");
         maxFlowMinCut.right.forEach(cut ->
                 System.out.printf("%s %s %d\n", labels[cut.left], labels[cut.middle], cut.right));
     }

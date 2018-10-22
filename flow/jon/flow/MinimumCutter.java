@@ -5,12 +5,6 @@ import util.jon.Triplet;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
-import static util.jon.Utils.consecutive;
-import static util.jon.Utils.product;
 
 public class MinimumCutter {
 
@@ -50,7 +44,7 @@ public class MinimumCutter {
                 }
                 var cap = network.getCapacity(from, to);
                 if (cap != 0) {
-                    outList.add(Triplet.of(from, to, cap));
+                    outList.add(Triplet.of(from, to, cap + network.getCapacity(to, from)));
                 }
             }
         }

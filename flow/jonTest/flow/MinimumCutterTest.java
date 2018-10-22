@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import util.jon.Triplet;
-import util.jon.Utils;
 
 import java.util.List;
 import java.util.Set;
@@ -30,7 +29,7 @@ class MinimumCutterTest {
         final int expectedMaxFlow = 5 + 8;
 
         final List<Triplet<Integer, Integer, Integer>> expectedMinimumCut = consecutive(Set.of(0, 1, 2)
-                .stream())
+                .stream().sorted())
                 .map(p -> Triplet.of(p.left, p.right, n.getCapacity(p.left, p.right)))
                 .collect(Collectors.toList());
 
@@ -39,5 +38,31 @@ class MinimumCutterTest {
         final var actualResult = minCutter.minimumCut();
         assertEquals(expectedMaxFlow, actualResult.left.intValue());
         assertIterableEquals(expectedMinimumCut, actualResult.right);
+    }
+
+    @Test
+    void slideTest() {
+        final var n = new Network(6);
+        final var s = n.source;
+        final var t = n.sink;
+        n.addEdge(s, 1, 10);
+        n.addEdge(0, 2, 10);
+        n.addEdge(1, 2, 2);
+        n.addEdge(1, 3, 4);
+        n.addEdge(1, 4, 8);
+        n.addEdge(2, 4, 9);
+        n.addEdge(3, t, 10);
+        n.addEdge(4, t, 10);
+
+        final var maxFlow = 19;
+
+        final var minCut = Set.of(Triplet.of(0, 2, 10));
+
+        final var minCutter = new MinimumCutter(n);
+
+        final var actual = minCutter.minimumCut();
+
+        assertEquals(maxFlow, actual.left.intValue());
+        assertIterableEquals(minCut, actual.right);
     }
 }
