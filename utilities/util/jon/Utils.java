@@ -3,6 +3,7 @@ package util.jon;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -26,6 +27,7 @@ public class Utils {
         return result;
     }
 
+    @SafeVarargs
     public static <T> ArrayList<T> append(List<T> a, T ... elements) {
         var result = new ArrayList<T>(a.size() + elements.length);
         result.addAll(a);
@@ -39,10 +41,18 @@ public class Utils {
         return result;
     }
 
+    @SafeVarargs
     public static <T> Set<T> append(Set<T> a, T ... elements) {
         var result = new TreeSet<T>(a);
         result.addAll(Arrays.asList(elements));
         return result;
+    }
+
+    @SafeVarargs
+    public static <T> ArrayList<T> arrayListOf(T ... elements) {
+        var list = new ArrayList<T>(elements.length);
+        list.addAll(Arrays.asList(elements));
+        return list;
     }
 
     /**
@@ -125,6 +135,15 @@ public class Utils {
      */
     public static <S, T> S fold(S initialState, T[] array, BiFunction<S, T, S> folder) {
         return fold(initialState, Arrays.stream(array).iterator(), folder);
+    }
+
+    public static <T> Stream<Pair<T, T>> consecutive(Stream<T> stream) {
+        List<Pair<T, T>> pairs = new LinkedList<>();
+        stream.reduce((a, b) -> {
+            pairs.add(Pair.of(a, b));
+            return b;
+        });
+        return pairs.stream();
     }
 
     public static <A, B, R> Stream<R> zip(
