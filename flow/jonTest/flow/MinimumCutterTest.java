@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import util.jon.Triplet;
+import util.jon.UTriplet;
 
 import java.util.List;
 import java.util.Set;
@@ -46,17 +47,18 @@ class MinimumCutterTest {
         final var s = n.source;
         final var t = n.sink;
         n.addEdge(s, 1, 10);
-        n.addEdge(0, 2, 10);
+        n.addEdge(s, 2, 10);
         n.addEdge(1, 2, 2);
         n.addEdge(1, 3, 4);
         n.addEdge(1, 4, 8);
         n.addEdge(2, 4, 9);
+        n.addEdge(4, 3, 6);
         n.addEdge(3, t, 10);
         n.addEdge(4, t, 10);
 
         final var maxFlow = 19;
 
-        final var minCut = Set.of(Triplet.of(0, 2, 10));
+        final var minCut = Set.of(UTriplet.from(0, 2, 10));
 
         final var minCutter = new MinimumCutter(n);
 

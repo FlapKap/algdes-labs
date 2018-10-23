@@ -49,16 +49,16 @@ public class ResidualGraph {
         graph[from][to] = capacity;
     }
 
-    private Optional<Path> findPath(Path acc, int currentNode) {
+    private Path findPath(Path acc, int currentNode) {
         searchedNodes++;
         if (currentNode == sink) {
-            var finalPath = new Path(append(acc.nodes, currentNode), acc.bottleneck);
-            return Optional.of(finalPath);
+            return new Path(append(acc.nodes, currentNode), acc.bottleneck);
         }
         final var adj = IntStream.range(0, size)
                 .boxed()
                 .map(adjIndex -> Pair.of(adjIndex, graph[currentNode][adjIndex]))
                 .filter(p -> p.right != 0 && !acc.nodes.contains(p.left))
+//                .sorted(Comparator.comparingInt(p -> -p.right))
                 .collect(Collectors.toList());
         for (var indexAndWeight : adj) {
             final int nextNode = indexAndWeight.left;
@@ -68,17 +68,13 @@ public class ResidualGraph {
             final int capacity = indexAndWeight.right;
             final var currentMin = Math.min(capacity, acc.bottleneck);
             final var next = new Path(append(acc.nodes, currentNode), currentMin);
-            final var pathOpt = findPath(next, nextNode);
-            if (!pathOpt.isPresent()) {
-                continue;
-            }
-            final var path = pathOpt.get();
+            final var path = findPath(next, nextNode);
             if (!path.nodes.contains(sink)) {
                 continue;
             }
-            return pathOpt;
+            return path;
         }
-        return Optional.empty();
+        return acc;
     }
 
     private int searchedNodes;
@@ -88,7 +84,7 @@ public class ResidualGraph {
      *
      * @return A pair consisting of the vertices on the path and the capacity of the path.
      */
-    public Optional<Path> findNewPath() {
+    public Path findNewPath() {
         searchedNodes = 0;
         var path = findPath(new Path(List.of(), Integer.MAX_VALUE), source);
         System.out.printf("Searched %d nodes!\n", searchedNodes);
@@ -102,24 +98,12 @@ public class ResidualGraph {
      * @param path the path used to augment the graph.
      */
     public void augmentByPath(Path path) {
-        consecutive(path.nodes.stream()).forEach(p -> {
-            final int v = p.left;
-            final int u = p.right;
+        for (int i = 0; i < path.nodes.size() - 1; i++) {
+            final int v = path.nodes.get(i);
+            final int u = path.nodes.get(i + 1);
             graph[v][u] -= path.bottleneck;
             graph[u][v] += path.bottleneck;
-        });
-    }
-
-    private Set<Integer> nodeComponent(Set<Integer> acc, int i) {
-        if (acc.contains(i)) {
-            return acc;
         }
-        return IntStream.range(0, size)
-                .boxed()
-                .map(j -> Pair.of(j, graph[i][j]))
-                .filter(p -> p.right != 0)
-                .map(p -> p.left)
-                .reduce(acc, (s, j) -> concat(s, nodeComponent(append(s, i), j)), Utils::concat);
     }
 
     /**
@@ -128,6 +112,20 @@ public class ResidualGraph {
      * @return A set of all nodes connected to the source.
      */
     public Set<Integer> sourceComponent() {
-        return nodeComponent(new LinkedHashSet<>(), source);
+        var visited = new boolean[size];
+        var queue = new LinkedList<Integer>();
+        queue.add(source);
+        while (!queue.isEmpty()) {
+            var v = queue.poll();
+            visited[v] = true;
+            var adj = IntStream.range(0, size)
+                    .boxed()
+                    .map(u -> Pair.of(u, graph[v][u]))
+                    .filter(p -> p.right != 0 && !visited[p.left])
+                    .map(p -> p.left)
+                    .collect(Collectors.toList());
+            queue.addAll(adj);
+        }
+        return IntStream.range(0, size).filter(i -> visited[i]).boxed().collect(Collectors.toSet());
     }
 }

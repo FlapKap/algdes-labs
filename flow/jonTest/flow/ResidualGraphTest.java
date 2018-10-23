@@ -45,17 +45,17 @@ class ResidualGraphTest {
 
         int actualMaxFlow = 0;
 
-        var path = testGraph.findNewPath().orElseThrow();
+        var path = testGraph.findNewPath();
         testGraph.augmentByPath(path);
         actualMaxFlow += path.bottleneck;
-        var path2 = testGraph.findNewPath().orElseThrow();
+        var path2 = testGraph.findNewPath();
         testGraph.augmentByPath(path2);
         actualMaxFlow += path2.bottleneck;
         var probablyNotAPath = testGraph.findNewPath();
 
         var actualMinCut = testGraph.sourceComponent();
 
-        assertTrue(!probablyNotAPath.isPresent());
+        assertTrue(probablyNotAPath.nodes.isEmpty());
         assertEquals(expectedMaxFlow, actualMaxFlow);
         assertEquals(expectedMinCut, actualMinCut);
     }

@@ -2,9 +2,12 @@ package flow;
 
 import util.jon.Pair;
 import util.jon.Triplet;
+import util.jon.UTriplet;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class MinimumCutter {
 
@@ -18,11 +21,10 @@ public class MinimumCutter {
     }
 
     private int maxFlow(int currentFlow) {
-        var pathOpt = residualGraph.findNewPath();
-        if (!pathOpt.isPresent()) {
+        var path = residualGraph.findNewPath();
+        if (path.nodes.isEmpty() || !path.nodes.contains(residualGraph.sink)) {
             return currentFlow;
         }
-        var path = pathOpt.get();
         var bottleneck = path.bottleneck;
         residualGraph.augmentByPath(path);
         return maxFlow(currentFlow + bottleneck);
@@ -33,21 +35,27 @@ public class MinimumCutter {
      *
      * @return A pair containing the max-flow and the min-cut.
      */
-    public Pair<Integer, List<Triplet<Integer, Integer, Integer>>> minimumCut() {
+    public Pair<Integer, List<UTriplet<Integer>>> minimumCut() {
         var maxFlow = maxFlow(0); //I guess we don't need this :(
         var sourceComponent = residualGraph.sourceComponent();
-        var outList = new ArrayList<Triplet<Integer, Integer, Integer>>();
-        for (var from : sourceComponent) {
-            for (var to : sourceComponent) {
-                if (from.equals(to)) {
-                    continue;
-                }
-                var cap = network.getCapacity(from, to);
-                if (cap != 0) {
-                    outList.add(Triplet.of(from, to, cap + network.getCapacity(to, from)));
-                }
-            }
-        }
-        return Pair.of(maxFlow, outList);
+//        var maxFlowDeduced = IntStream.range(0, network.size)
+//                .filter(i -> !sourceComponent.contains(i))
+//                .boxed()
+//                .flatMap(i ->
+//                        sourceComponent
+//                                .stream()
+//                                .filter(j -> network.getCapacity(j, i) != 0)
+//                                .map(j -> network.getCapacity(j, i))
+//                ).reduce(Integer::sum);
+        var minimumCut = IntStream.range(0, network.size)
+                .filter(i -> !sourceComponent.contains(i))
+                .boxed()
+                .flatMap(i ->
+                        sourceComponent
+                                .stream()
+                                .filter(j -> network.getCapacity(j, i) != 0)
+                                .map(j -> UTriplet.from(j, i, network.getCapacity(j, i)))
+                ).collect(Collectors.toList());
+        return Pair.of(maxFlow, minimumCut);
     }
 }
