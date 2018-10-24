@@ -2,6 +2,8 @@ package com.wingcorp.GraphUtils;
 
 import edu.princeton.cs.algs4.Bag;
 
+import java.util.Arrays;
+
 public class FlowDiGraph {
     private final int V;
     private int E;
@@ -39,9 +41,15 @@ public class FlowDiGraph {
         E++;
     }
 
-    public Bag<Edge> adj(int v) {
+    public Bag<Edge> adj(int v, int minRes) {
         validateVertex(v);
-        return adj[v];
+        Bag<Edge> returnBag = new Bag<>();
+        for(Edge e : adj[v]){
+            if (e.ResidualTo(e.other(v)) >= minRes){
+                returnBag.add(e);
+            }
+        }
+        return returnBag;
     }
 
     public String toString() {

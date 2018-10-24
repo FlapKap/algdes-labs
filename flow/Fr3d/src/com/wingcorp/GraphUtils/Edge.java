@@ -29,7 +29,7 @@ public class Edge {
             FlowToU -= flow;
         }
 
-        Flow += flow;
+        Flow = Math.max(FlowToU, FlowToV);
 
         return Flow;
     }
