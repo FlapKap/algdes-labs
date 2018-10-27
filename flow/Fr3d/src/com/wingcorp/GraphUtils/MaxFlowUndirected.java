@@ -10,21 +10,30 @@ public class MaxFlowUndirected {
     private Edge[] edgeTo;    // edgeTo[v] = last edge on shortest residual s->v path
     private double value;         // current value of max flow
 
+    private int iterations;
+
     public MaxFlowUndirected(FlowDiGraph G, int s, int t) {
-
+        iterations = 0;
+        int minRes = 10;
         // while there exists an augmenting path, use it
-        while (hasAugmentingPath(G, s, t)) {
+        while (minRes >= 0) {
+            while (hasAugmentingPath(G, s, t, minRes)) {
+                iterations++;
 
-            // compute bottleneck capacity
-            double bottle = bottleneck(s, t);
+                // compute bottleneck capacity
+                double bottle = bottleneck(s, t);
 
-            // augment flow
-            for (int v = t; v != s; v = edgeTo[v].other(v)) {
-                edgeTo[v].AddFlowTo(v, bottle);
+                System.out.println("Pushing flow through path: " + bottle);
+
+                // augment flow
+                for (int v = t; v != s; v = edgeTo[v].other(v)) {
+                    edgeTo[v].AddFlowTo(v, bottle);
+                }
+
+                // Increase the value by the bottleneck
+                value += bottle;
             }
-
-            // Increase the value by the bottleneck
-            value += bottle;
+            minRes -= 2;
         }
 
         // Print the minimum cut
@@ -35,10 +44,11 @@ public class MaxFlowUndirected {
 
     public void printValue() {
         System.out.println("Value: " + value);
+        System.out.println("Iterations: " + iterations);
     }
 
     // Checks if there is a path to be augmented from s to t in the graph using breadth-first-search
-    private boolean hasAugmentingPath(FlowDiGraph G, int s, int t) {
+    private boolean hasAugmentingPath(FlowDiGraph G, int s, int t, int minRes) {
         edgeTo = new Edge[G.V()];
         marked = new boolean[G.V()];
 
@@ -54,7 +64,7 @@ public class MaxFlowUndirected {
             int v = queue.dequeue();
 
             // For each edge adjacent to it
-            for (Edge e : G.adj(v)) {
+            for (Edge e : G.adj(v, minRes)) {
 
                 // Get the vertex on the other side of this edge that is not the current one
                 int w = e.other(v);
@@ -91,7 +101,7 @@ public class MaxFlowUndirected {
         var minCuts = new ArrayList<String>();
         for (int v = 0; v < G.V(); v++) {
             if (marked[v]) {
-                var adj = G.adj(v);
+                var adj = G.adj(v, 0);
                 for(Edge e : adj){
                     // Get an adjacent vertex and check if it is in the same side of the cut
                     if (!marked[e.other(v)]){
