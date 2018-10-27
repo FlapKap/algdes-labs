@@ -1,6 +1,5 @@
 package flow;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -15,6 +14,17 @@ import java.util.stream.Collectors;
 import static util.jon.Utils.consecutive;
 
 class MinimumCutterTest {
+
+    /*
+             B -----10---> C -----+
+             ^                    |
+             |                    |
+             10                   5
+             |                    |
+        A +--+                    +--> E
+             |                    |
+             +---8--> D -----8----+
+     */
 
     @Test
     void minimumCut() {
@@ -58,7 +68,7 @@ class MinimumCutterTest {
 
         final var maxFlow = 19;
 
-        final var minCut = Set.of(UTriplet.from(0, 2, 10));
+        final var minCut = Set.of(UTriplet.from(0, 1, 10), UTriplet.from(2, 4, 9));
 
         final var minCutter = new MinimumCutter(n);
 

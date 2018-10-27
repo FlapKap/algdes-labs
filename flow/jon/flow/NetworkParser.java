@@ -35,7 +35,9 @@ public class NetworkParser {
 
         for (int i = 0; i < edges; i++) {
             var edge = ir.findNext(edgePattern).stream().skip(1).map(Integer::parseInt).collect(Collectors.toList());
-            network.addEdge(edge.get(0), edge.get(1), (edge.get(2) < 0) ? Integer.MAX_VALUE : edge.get(2));
+            var weight = (edge.get(2) < 0) ? Integer.MAX_VALUE : edge.get(2);
+            network.addEdge(edge.get(0), edge.get(1), weight);
+            network.addEdge(edge.get(1), edge.get(0), weight);
         }
 
         return Pair.of(labels, network);

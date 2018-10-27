@@ -1,8 +1,8 @@
 package flow;
 
 
+import util.jon.IntPair;
 import util.jon.Pair;
-import util.jon.Utils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,8 +22,8 @@ public class ResidualGraph {
         }
     }
 
-    private int size;
-    public int[][] graph;
+    private final int size;
+    public final int[][] graph;
 
     public final int source = 0;
     public final int sink;
@@ -50,16 +50,21 @@ public class ResidualGraph {
     }
 
     private Path findPath(Path acc, int currentNode) {
-        searchedNodes++;
         if (currentNode == sink) {
             return new Path(append(acc.nodes, currentNode), acc.bottleneck);
         }
         final var adj = IntStream.range(0, size)
-                .boxed()
-                .map(adjIndex -> Pair.of(adjIndex, graph[currentNode][adjIndex]))
+                .mapToObj(adjIndex -> IntPair.of(adjIndex, graph[currentNode][adjIndex]))
                 .filter(p -> p.right != 0 && !acc.nodes.contains(p.left))
 //                .sorted(Comparator.comparingInt(p -> -p.right))
+                /*
+                    I can apply sorting for the highest capacity edges
+                    to effectively cut down the number of total iterations.
+                    But the sorting operation O(V * Log(V)) slows down
+                    the program significantly (by about 5 seconds!).
+                 */
                 .collect(Collectors.toList());
+
         for (var indexAndWeight : adj) {
             final int nextNode = indexAndWeight.left;
             if (acc.nodes.contains(nextNode)) {
@@ -77,18 +82,13 @@ public class ResidualGraph {
         return acc;
     }
 
-    private int searchedNodes;
-
     /**
      * Returns a new, unique path through the Residual Graph.
      *
      * @return A pair consisting of the vertices on the path and the capacity of the path.
      */
     public Path findNewPath() {
-        searchedNodes = 0;
-        var path = findPath(new Path(List.of(), Integer.MAX_VALUE), source);
-        System.out.printf("Searched %d nodes!\n", searchedNodes);
-        return path;
+        return findPath(new Path(List.of(), Integer.MAX_VALUE), source);
     }
 
     /**
@@ -111,7 +111,7 @@ public class ResidualGraph {
      *
      * @return A set of all nodes connected to the source.
      */
-    public Set<Integer> sourceComponent() {
+    public List<Integer> sourceComponent() {
         var visited = new boolean[size];
         var queue = new LinkedList<Integer>();
         queue.add(source);
@@ -119,13 +119,12 @@ public class ResidualGraph {
             var v = queue.poll();
             visited[v] = true;
             var adj = IntStream.range(0, size)
-                    .boxed()
-                    .map(u -> Pair.of(u, graph[v][u]))
-                    .filter(p -> p.right != 0 && !visited[p.left])
+                    .mapToObj(u -> IntPair.of(u, graph[v][u]))
+                    .filter(p -> !visited[p.left] && p.right != 0)
                     .map(p -> p.left)
                     .collect(Collectors.toList());
             queue.addAll(adj);
         }
-        return IntStream.range(0, size).filter(i -> visited[i]).boxed().collect(Collectors.toSet());
+        return IntStream.range(0, size).filter(i -> visited[i]).boxed().collect(Collectors.toList());
     }
 }

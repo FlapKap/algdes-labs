@@ -141,9 +141,18 @@ public class Utils {
     }
 
     public static <T> Stream<Pair<T, T>> consecutive(Stream<T> stream) {
-        List<Pair<T, T>> pairs = new LinkedList<>();
+        LinkedList<Pair<T, T>> pairs = new LinkedList<>();
         stream.reduce((a, b) -> {
-            pairs.add(Pair.of(a, b));
+            pairs.addLast(Pair.of(a, b));
+            return b;
+        });
+        return pairs.stream();
+    }
+
+    public static Stream<IntPair> consecutive(IntStream stream) {
+        LinkedList<IntPair> pairs = new LinkedList<>();
+        stream.reduce((a, b) -> {
+            pairs.addLast(IntPair.of(a, b));
             return b;
         });
         return pairs.stream();
