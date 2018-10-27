@@ -2,7 +2,6 @@ package flow;
 
 
 import util.jon.IntPair;
-import util.jon.Pair;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -23,40 +22,47 @@ public class ResidualGraph {
     }
 
     private final int size;
-    public final int[][] graph;
+    //               From     To, Capacity
+    public final Map<Integer, List<IntPair>> graph;
 
     public final int source = 0;
     public final int sink;
 
     public ResidualGraph(int size) {
         this.size = size;
-        graph = new int[size][size];
+        graph = new TreeMap<>();
         sink = size - 1;
     }
 
     public ResidualGraph(Network network) {
         this.size = network.size;
         this.sink = network.sink;
-        graph = new int[size][size];
+        graph = new TreeMap<>();
         for (int i = source; i < size; i++) {
+            graph.put(i, new LinkedList<>());
             for (int j = source; j < size; j++) {
-                graph[i][j] = network.getCapacity(i, j);
+                var cap = network.getCapacity(i, j);
+                if (cap > 0) {
+                    graph.get(i).add(IntPair.of(j, cap));
+                }
             }
         }
     }
 
     public void addEdge(int from, int to, int capacity) {
-        graph[from][to] = capacity;
+        if (!graph.containsKey(from)) {
+            graph.put(from, new LinkedList<>());
+        }
+        graph.get(from).add(IntPair.of(to, capacity));
     }
 
     private Path findPath(Path acc, int currentNode) {
         if (currentNode == sink) {
             return new Path(append(acc.nodes, currentNode), acc.bottleneck);
         }
-        final var adj = IntStream.range(0, size)
-                .mapToObj(adjIndex -> IntPair.of(adjIndex, graph[currentNode][adjIndex]))
-                .filter(p -> p.right != 0 && !acc.nodes.contains(p.left))
-//                .sorted(Comparator.comparingInt(p -> -p.right))
+        final var adj = graph.get(currentNode)
+                .stream()
+                .filter(p -> p.right > 0 && !acc.nodes.contains(p.left))
                 /*
                     I can apply sorting for the highest capacity edges
                     to effectively cut down the number of total iterations.
@@ -101,8 +107,16 @@ public class ResidualGraph {
         for (int i = 0; i < path.nodes.size() - 1; i++) {
             final int v = path.nodes.get(i);
             final int u = path.nodes.get(i + 1);
-            graph[v][u] -= path.bottleneck;
-            graph[u][v] += path.bottleneck;
+            graph.put(v, graph.get(v).stream().map(p -> {
+                if (p.left == u) {
+                    return p.updateRight(cap -> cap - path.bottleneck);
+                } else return p;
+            }).collect(Collectors.toList()));
+            graph.put(u, graph.get(u).stream().map(p -> {
+                if (p.left == v) {
+                    return p.updateRight(cap -> cap + path.bottleneck);
+                } else return p;
+            }).collect(Collectors.toList()));
         }
     }
 
@@ -118,9 +132,8 @@ public class ResidualGraph {
         while (!queue.isEmpty()) {
             var v = queue.poll();
             visited[v] = true;
-            var adj = IntStream.range(0, size)
-                    .mapToObj(u -> IntPair.of(u, graph[v][u]))
-                    .filter(p -> !visited[p.left] && p.right != 0)
+            var adj = graph.get(v).stream()
+                    .filter(p -> !visited[p.left])
                     .map(p -> p.left)
                     .collect(Collectors.toList());
             queue.addAll(adj);
