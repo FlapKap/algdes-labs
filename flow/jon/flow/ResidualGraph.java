@@ -133,7 +133,7 @@ public class ResidualGraph {
             var v = queue.poll();
             visited[v] = true;
             var adj = graph.get(v).stream()
-                    .filter(p -> !visited[p.left])
+                    .filter(p -> !visited[p.left] && p.right != 0)
                     .map(p -> p.left)
                     .collect(Collectors.toList());
             queue.addAll(adj);
