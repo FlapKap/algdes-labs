@@ -326,10 +326,15 @@ typedef struct _Graph {
 Graph* mk_graph(int size)
 {
     int** graph = malloc(sizeof(int*) * size);
-    int u;
-    for (u = 0; u < size; u++)
+    int v;
+    for (v = 0; v < size; v++)
     {
-        graph[u] = malloc(sizeof(int));
+        graph[v] = malloc(sizeof(int) * size);
+        int u;
+        for (u = 0; u < size; u++)
+        {
+            graph[v][u] = 0;
+        }
     }
     Graph* toReturn = malloc(sizeof(Graph));
     toReturn->size = size;
@@ -383,7 +388,7 @@ Path* find_path_rec(Graph* graph, Path* acc, int currentNode)
     int u;
     for(u = 0; u < graph->size; u++)
     {
-        if (!contains(acc->nodes, u) && graph->graph[currentNode][u] > 0)
+        if (graph->graph[currentNode][u] != 0 && !contains(acc->nodes, u))
         {
             adj = cons(u, adj);
         }
@@ -434,7 +439,9 @@ void augment_by_path(Graph* g, Path* p)
     return augment_by_path_rec(g, p->nodes, p->bottleneck);
 }
 
-void print_source_component(Graph* residual, Graph* original)
+char** labels;
+
+void print_mincut(Graph* residual, Graph* original)
 {
     int* visited = malloc(sizeof(int) * residual->size);
     int v_idx;
@@ -471,15 +478,59 @@ void print_source_component(Graph* residual, Graph* original)
         int j;
         for(j = 0; j < residual->size; j++)
         {
-            if(!contains(component, j) && original->graph[i][j] != 0)
+            if(original->graph[i][j] != 0 && !contains(component, j))
             {
-                printf("%d %d %d\n", i, j, original->graph[i][j]);
+                printf("%s %s %d\n", labels[i], labels[j], original->graph[i][j]);
             }
         }
     }
 }
 
 #pragma endregion Graph
+
+#pragma region Parser
+
+// Write parser here.
+typedef struct _ParsedGraph
+{
+    Graph* graph;
+} ParsedGraph;
+
+Graph* parse_graph(FILE* fp)
+{
+    int v;
+    fscanf(fp, "%d\n", &v);
+    printf("Parsed V = %d\n", v);
+    labels = malloc(sizeof(char*) * v);
+    printf("Parsing labels...\n");
+    char buffer[128];
+    int i;
+    for (i = 0; i < v; i++)
+    {
+        labels[i] = malloc(sizeof(char)*128);
+        fscanf(fp, "%s\n", buffer);
+        labels[i] = buffer;
+    }
+    printf("Parsing edges...\n");
+    Graph* g = mk_graph(v);
+    int e;
+    fscanf(fp, "%d\n", &e);
+    printf("e = %d\n", e);
+    int j;
+    int from;
+    int to;
+    int cap;
+    for (j = 0; j < e; j++)
+    {
+        fscanf(fp, "%d %d %d\n", &from, &to, &cap);
+        int weight = (cap < 0) ? INT_MAX : cap;
+        g->graph[from][to] = weight;
+        g->graph[to][from] = weight;
+    }    
+    return g;
+}
+
+#pragma endregion Parser
 
 #pragma region MinCut
 
@@ -503,19 +554,27 @@ void minimum_cut(Graph* g)
     Graph* r = clone_graph(g);
     int mf = max_flow(r, 0);
     printf("max-flow: %d\n", mf);
-    print_source_component(r, g);
+    // print_mincut(r, g);
 }
 
 #pragma endregion MinCut
 
-#pragma region Parser
-
-// Write parser here.
-
-#pragma endregion Parser
-
 int main(int argc, char const *argv[])
 {
+    FILE* fp;
+    printf("argc = %d\n", argc);
+    printf("argv[1] = %s\n", argv[1]);
+    if (argc > 1) 
+    {
+        printf("Using file %s\n", argv[1]);
+        fp = fopen(argv[1], "r");
+    } 
+    else 
+    {
+        fp = stdin;
+    }
+    Graph* g = parse_graph(fp);
+    printf("Parsed graph!\n");
     // Simple graph:
     // Graph* g = mk_graph(5);
     // int source = 0;
@@ -527,18 +586,18 @@ int main(int argc, char const *argv[])
     // g->graph[3][sink] = 8;
 
     // Graph from slides:
-    Graph* g = mk_graph(6);
-    int s = 0;
-    int t = 5;
-    g->graph[s][1] = 10;
-    g->graph[s][2] = 10;
-    g->graph[1][2] = 2;
-    g->graph[1][3] = 4;
-    g->graph[1][4] = 8;
-    g->graph[2][4] = 9;
-    g->graph[4][3] = 6;
-    g->graph[3][t] = 10;
-    g->graph[4][t] = 10;
+    // Graph* g = mk_graph(6);
+    // int s = 0;
+    // int t = 5;
+    // g->graph[s][1] = 10;
+    // g->graph[s][2] = 10;
+    // g->graph[1][2] = 2;
+    // g->graph[1][3] = 4;
+    // g->graph[1][4] = 8;
+    // g->graph[2][4] = 9;
+    // g->graph[4][3] = 6;
+    // g->graph[3][t] = 10;
+    // g->graph[4][t] = 10;
 
     minimum_cut(g);
     return 0;
