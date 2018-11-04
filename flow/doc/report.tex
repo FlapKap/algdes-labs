@@ -9,7 +9,7 @@
 
 
 \title{Flow Report}
-\author{Anatoli Cooper and Boris Marley}
+\author{Kasper Hjort Berthelsen, Jesper Kato Jensen, Frederik Schou Madsen, Heidi Regina Schröder, Julie Schou Sørensen and Jon Voigt Tøttrup}
 
 \begin{document}
   \maketitle
@@ -17,63 +17,75 @@
   \section{Results}
 
   Our implementation successfully computes a flow of 163 on the input file, confirming the analysis of the American enemy.
-  \sidenote{%
-  Complete the report by filling in your correct names,
-  filling in the parts marked $[\ldots]$,
-  and changing other parts wherever necessary.
-  Remove the sidenotes in your final hand-in.
-  Insert `comrades!' and `for the motherland' wherever you see fit.
-  }
 
   We have analysed the possibilities of decreasing the capacities near Minsk.
-  Our analysis is summaries in the following table:\sidenote{%
-    Complete and correct the table.
-  }
+  Our analysis is summaries in the following table:
 
 \bigskip
   \begin{tabular}{rccc}\toprule
     Case & 4W--48 & 4W--49 & Effect on flow \\\midrule
     1& 30& 20 & no change \\
     2& 20 &30 & no change \\
-    3&20 & 20& $-10$ \\
-    $[\ldots]$ \\\bottomrule
+    3&20 & 20& no change \\
+    4& 20 & 10 & $-10$\\
+    5& 10 & 20 & $-10$\\
+    6& 10 & 10 & $-20$\\
+    \bottomrule
   \end{tabular}
   \bigskip
 
-  In case 4, the new bottleneck becomes
-  \begin{quote}
-      1--44, 3--2, $[\ldots]$
-  \end{quote}
-  The comrade from Minsk is advised to $[\ldots]$.
 
-  \section{Implementation details}
+\section{Implementation details}
 
-  We use a straightforward implementation of Bellman--Quine's flow algorithm as described in Bronstein, \emph{Foundations of Algorithms}, chap.~6.
-  We use Prim's algorithm to find an augmenting path and also implement the neat trick of flow by recomputing the inverse of the antisnail every 2nd iteration.\sidenote{%
-    Replace by a description of what you actually do.
-  }
+The MaximumFlow-implementation is build up by the .java files:
 
-  The running time is $[\ldots]$.
+\begin{itemize}[-]
+\item \verb#Main.java#: The main method
+\item \verb#FileReader.java#: Reads the input file
+\item \verb#FlowNetwork.java#: The graph data type
+\item \verb#FlowEdge.java#: The edge data type
+\item \verb#FordFulkerson.java#: The algorithm solving the maximum flow problem
+\end{itemize}
 
-  We have implemented each undirected edge in the input graph as a $[\ldots]$.
-  In the corresponding residual graph, the edge is represented by a $[\ldots]$.
-  Our datatype for edge is this:
-  \sidenote{%
-    What I wrote here is complete nonsense, of course.
-    Replace by a description of your actual implementation---what \emph{did} you use?
-    A pair of directed edges?
-    A single undirected edges with a bit to see in which direction the flow goes?
-    As indicated, it makes sense to actually include your datatype for edge in the report.
-    Here, and in general, it makes sense to have written short and sweet code.
-  }
-  \begin{verbatim}
-    class FlowEdge
-    {
-      Vertex from, to;
-      GUISwingComponentFactory bar;
-      Edge next, parent, foo;
-    }
-  \end{verbatim}
+
+We use the implementation of Ford-Fulkerson's Maximum-Flow algorithm described in 7.1 of Kleinberg and Tardos, \emph{Algorithm Design}, Pearson Education 2006 as well as page 886-902 of Sedgewick and Wayne, \emph{Algorithms}, Fourth edition, Pearson Education 2011. 
+
+The algorithm is based on the assumption that the flow network is a directed graph, but in the assignment the flow network is undirected. To overcome this, we implement it as a directed graph where all edges are added as both a forward and a backward edge. Also, the names of the vertices in the input file aren't unique, so we name the vertices with indexes from 0 (the source) to $V-1$ (the sink), where $V$ is the number of vertices.
+
+The data structures used are as follows: The flow network is implemented as an array of linked lists of edges (\verb#FlowEdges#). The array indexes denote the vertices and the linked list for each vertex is an adjacency list of which edges are adjacent from that vertex. 
+
+The data type for \verb#FlowEdge# is defines by the following API:
+
+  \bigskip
+ \begin{tabular}{llll}
+	\verb#public# 	& \verb#class# 	& \verb#FlowEdge# 						& \\\midrule
+					&				& \verb#FlowEdge(int v, int w, int capacity)#	& \\
+					& int			& \verb#capacity()#							& capacity of this edge \\
+					& int			& \verb#either()#									& either of this edge's vertices \\
+					& int 			& \verb#other()#									& the other vertex \\
+					& int 			& \verb#residualCapacityTo(int v)#			& residual capacity toward v \\
+					& int 			& \verb#updateResidualCapacityTo(int v, int b)# & add b flow toward v
+\end{tabular}
+\bigskip
+
+Each edge goes from a vertex $v$ to a vertex $w$ and has a capacity. Also, each edge has a residual capacity, \verb#residualCap#, that is initiated with 0. The original capacity is final and only the residual capacity can be updated. In this way the residual graph is implemented in the \verb#FlowEdge#-object instead of declaring a second graph. The residual graph is maintained via the methods \verb#residualCapacityTo(int v)# and \verb#updateResidualCapacityTo(int v, int b)#. The method \verb#residualCapacityTo(int v)# returns the residual capacity toward $v$ and the method \verb#updateResidualCapacityTo(int v, int b)# updates \verb#residualCap# with the bottleneck of the augmenting path.
+  
+To find an augmenting path we use Breadth-first search (the private method \verb#hasAugmentingPath# in class \verb#FordFulkerson#). This method checks whether there is a path from the source $s$ to the sink $t$. It returns \verb#true# if there is such a path and \verb#false# if there is not. The path is stored in an array of \verb#FlowEdges#, called \verb#edgeTo#. It is now easy to trace back the path by the loop:
+\begin{verbatim}
+for(int v = t; v != s; v = edgeTo[v].other(v)) 
+\end{verbatim}
+starting from the sink and updating with the other vertex of the edge on the augmenting path. 
+
+If no more possible path's are available the overall loop in \verb#FordFulkerson# stops and calls the method \verb#minCut#, that prints the minimum cut. The method \verb#minCut# loop through all the vertices that the source $s$ can reach (with \verb#true# in the array \verb#visited#). For each such vertex the method loops through the adjacent edges and checks whether the other vertex of the edge is reachable from the source. If not, it is part of the minimum cut and the method prints the value.
+
+The overall running time of our implementation is $O(C(V+E))$, where 
+\begin{itemize}[-]
+\item $C = \sum_{e\text{ out of }s} c_e$ and $c_e$ is the capacity of edge $e$.
+\item $V$ is the number of vertices.
+\item $E$ is the number of edges.
+\end{itemize}
+
+
 
 
 \end{document}
