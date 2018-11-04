@@ -1,7 +1,7 @@
 import java.util.LinkedList;
 
 public class FordFulkerson {
-	private boolean visited[];
+	private boolean[] visited;
 	private FlowEdge[] edgeTo;
 	private int maxFlow = 0;
 	
