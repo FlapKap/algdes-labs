@@ -32,7 +32,6 @@
     6& 10 & 10 & $-20$\\
     \bottomrule
   \end{tabular}
-  \bigskip
 
 
 \section{Implementation details}
@@ -40,6 +39,7 @@
 The MaximumFlow-implementation is build up by the .java files:
 
 \begin{itemize}[-]
+\setlength\itemsep{0em}
 \item \verb#Main.java#: The main method
 \item \verb#FileReader.java#: Reads the input file
 \item \verb#FlowNetwork.java#: The graph data type
@@ -52,7 +52,7 @@ We use the implementation of Ford-Fulkerson's Maximum-Flow algorithm described i
 
 The algorithm is based on the assumption that the flow network is a directed graph, but in the assignment the flow network is undirected. To overcome this, we implement it as a directed graph where all edges are added as both a forward and a backward edge. Also, the names of the vertices in the input file aren't unique, so we name the vertices with indexes from 0 (the source) to $V-1$ (the sink), where $V$ is the number of vertices.
 
-The data structures used are as follows: The flow network is implemented as an array of linked lists of edges (\verb#FlowEdges#). The array indexes denote the vertices and the linked list for each vertex is an adjacency list of which edges are adjacent from that vertex. 
+The data structures used are as follows: The flow network is implemented as an array of linked lists of edges (\verb#FlowEdges#). The array indexes denote the vertices and the linked list for each vertex is an adjacency list of which edges are adjacent to that vertex. 
 
 The data type for \verb#FlowEdge# is defines by the following API:
 
@@ -66,7 +66,7 @@ The data type for \verb#FlowEdge# is defines by the following API:
 					& int 			& \verb#residualCapacityTo(int v)#			& residual capacity toward v \\
 					& int 			& \verb#updateResidualCapacityTo(int v, int b)# & add b flow toward v
 \end{tabular}
-\bigskip
+\smallskip
 
 Each edge goes from a vertex $v$ to a vertex $w$ and has a capacity. Also, each edge has a residual capacity, \verb#residualCap#, that is initiated with 0. The original capacity is final and only the residual capacity can be updated. In this way the residual graph is implemented in the \verb#FlowEdge#-object instead of declaring a second graph. The residual graph is maintained via the methods \verb#residualCapacityTo(int v)# and \verb#updateResidualCapacityTo(int v, int b)#. The method \verb#residualCapacityTo(int v)# returns the residual capacity toward $v$ and the method \verb#updateResidualCapacityTo(int v, int b)# updates \verb#residualCap# with the bottleneck of the augmenting path.
   
@@ -76,16 +76,9 @@ for(int v = t; v != s; v = edgeTo[v].other(v))
 \end{verbatim}
 starting from the sink and updating with the other vertex of the edge on the augmenting path. 
 
-If no more possible path's are available the overall loop in \verb#FordFulkerson# stops and calls the method \verb#minCut#, that prints the minimum cut. The method \verb#minCut# loop through all the vertices that the source $s$ can reach (with \verb#true# in the array \verb#visited#). For each such vertex the method loops through the adjacent edges and checks whether the other vertex of the edge is reachable from the source. If not, it is part of the minimum cut and the method prints the value.
+If no more possible path's are available the overall loop in \verb#FordFulkerson# stops and calls the method \verb#minCut#, that prints the minimum cut. The method \verb#minCut# loops through all the vertices that the source $s$ can reach (with \verb#true# in the array \verb#visited#). For each such vertex the method loops through the adjacent edges and checks whether the other vertex of the edge is reachable from the source. If not, it is part of the minimum cut and the method prints the value.
 
-The overall running time of our implementation is $O(C(V+E))$, where 
-\begin{itemize}[-]
-\item $C = \sum_{e\text{ out of }s} c_e$ and $c_e$ is the capacity of edge $e$.
-\item $V$ is the number of vertices.
-\item $E$ is the number of edges.
-\end{itemize}
-
-
+The overall running time of our implementation is $O(C(V+E))$, where $C = \sum_{e\text{ out of }s} c_e$, $c_e$ is the capacity of edge $e$, $V$ is the number of vertices and $E$ is the number of edges.
 
 
 \end{document}
