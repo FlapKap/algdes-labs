@@ -89,8 +89,8 @@ object RedScare {
         val noReds = copy(g, edgeFilter = { !it.adjacentToRed })
         val noRedsPath = findPath(noReds)
 
-        val onlyReds = copy(g, edgeFilter = { it.adjacentToRed })
-        val onlyRedsPath = findPath(onlyReds)
+        val someReds = copy(g, edgeFilter = { it.adjacentToRed })
+        val someRedsPath = findPath(someReds)
 
         val many = copy(g, edgeFilter = { !it.adjacentToRed })
         val manyPath =
@@ -112,7 +112,7 @@ object RedScare {
         ${answer(noRedsPath)}
 
           Some:
-        ${answer(onlyRedsPath)}
+        ${answer(someRedsPath)}
 
           Many:
         ${answer(manyPath)}
