@@ -13,8 +13,22 @@
         <maven.compiler.target>10</maven.compiler.target>
         <kotlin.version>1.3.0</kotlin.version>
     </properties>
-
+    <repositories>
+    <repository>
+        <snapshots>
+            <enabled>false</enabled>
+        </snapshots>
+        <id>bintray-algs4-maven</id>
+        <name>bintray</name>
+        <url>https://dl.bintray.com/algs4/maven</url>
+    </repository>
+    </repositories>
     <dependencies>
+        <dependency>
+            <groupId>edu.princeton.cs</groupId>
+            <artifactId>algs4</artifactId>
+            <version>1.0.3</version>
+        </dependency>
         <dependency>
             <groupId>net.sf.jung</groupId>
             <artifactId>jung-graph-impl</artifactId>
@@ -46,6 +60,11 @@
             <version>${kotlin.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -66,7 +85,6 @@
                                 <source>gorilla/src</source>
                                 <source>utilities</source>
                                 <source>flow/jon</source>
-                                <source>red-scare/src</source>
                                 <source>red-scare/jon</source>
                             </sourceDirs>
                         </configuration>
