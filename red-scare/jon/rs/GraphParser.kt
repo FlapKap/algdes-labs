@@ -10,7 +10,7 @@ import java.util.regex.Pattern
  */
 object GraphParser {
 
-    fun parse(inputStream: InputStream): DirectedSparseMultigraph<Node, Edge> {
+    fun parse(inputStream: InputStream): Graph {
         val reader = InputReader(inputStream)
         val headerPattern = Pattern.compile("(\\d+) (\\d+) (\\d+)")
 
@@ -39,35 +39,35 @@ object GraphParser {
 
         nodes.values.forEach { g.addVertex(it) }
 
+        var gUndirected = true
+
         for (i in 0 until e) {
             val line = reader.readLine().trim()
             val segments = line.split(wsPat).map { it.trim() }
-            val fromLabel = segments.first()
-            val toLabel = segments.last()
+            var fromLabel = segments.first()
+            var toLabel = segments.last()
             val undirected = (segments[1].contentEquals("--"))
+
             val from = nodes[fromLabel]
+            if (from!!.isRed) {
+                fromLabel += "*"
+            }
             val to = nodes[toLabel]
-            val adjacentToRed = from!!.isRed || to!!.isRed
-            val adjacentToSource = to!!.isSource || from.isSource
-            val adjacentToSink = from.isSink || to.isSink
+            if (to!!.isRed) {
+                toLabel += "*"
+            }
+
             val label = "$fromLabel ${if (undirected) "--" else "->"} $toLabel"
-            g.addEdge(Edge(label, adjacentToRed, adjacentToSource, adjacentToSink), from, to)
+            g.addEdge(Edge(label, from, to), from, to)
             if (undirected) {
                 val revLabel = "$toLabel -- $fromLabel"
-                g.addEdge(
-                        Edge(
-                                revLabel,
-                                adjacentToRed,
-                                adjacentToSource,
-                                adjacentToSink
-                        ),
-                        to,
-                        from
-                )
+                g.addEdge(Edge(revLabel, from, to), to, from)
+            } else {
+                gUndirected = false
             }
         }
 
-        return g
+        return Graph(g, gUndirected, g.vertices.first { it.isSource }, g.vertices.first { it.isSink })
     }
 
 }
