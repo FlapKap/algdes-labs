@@ -48,11 +48,22 @@ object GraphParser {
             val from = nodes[fromLabel]
             val to = nodes[toLabel]
             val adjacentToRed = from!!.isRed || to!!.isRed
-            val label = "$fromLabel ${if (undirected) "--" else "->" } $toLabel"
-            g.addEdge(Edge(label, adjacentToRed), from, to)
+            val adjacentToSource = to!!.isSource || from.isSource
+            val adjacentToSink = from.isSink || to.isSink
+            val label = "$fromLabel ${if (undirected) "--" else "->"} $toLabel"
+            g.addEdge(Edge(label, adjacentToRed, adjacentToSource, adjacentToSink), from, to)
             if (undirected) {
                 val revLabel = "$toLabel -- $fromLabel"
-                g.addEdge(Edge(revLabel, adjacentToRed), to, from)
+                g.addEdge(
+                        Edge(
+                                revLabel,
+                                adjacentToRed,
+                                adjacentToSource,
+                                adjacentToSink
+                        ),
+                        to,
+                        from
+                )
             }
         }
 
