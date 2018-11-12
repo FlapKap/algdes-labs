@@ -29,19 +29,17 @@ object RedScare {
     }
 
     private fun nonePath(g: Graph) {
-        val noneGraph = copy(g, edgeFilter = { !it.adjacentToRed })
-        val path = DijkstraShortestPath(noneGraph)
+        val path = DijkstraShortestPath(g)
         path
-                .getPath(noneGraph.vertices.first { it.isSource }, noneGraph.vertices.first { it.isSink })
+                .getPath(g.vertices.first { it.isSource }, g.vertices.first { it.isSink })
                 .forEach {
                     println(it.label)
                 }
     }
 
     private fun somePath(g: Graph) {
-        val someGraph = copy(g)
-        val source = someGraph.vertices.first { it.isSource }
-        val dest = someGraph.vertices.first { it.isSink }
+        val source = g.vertices.first { it.isSource }
+        val dest = g.vertices.first { it.isSink }
     }
 
     @JvmStatic
@@ -52,6 +50,7 @@ object RedScare {
         }
         val file = args.first()
         val g = GraphParser.parse(FileInputStream(file))
-        nonePath(g)
+        val noReds = copy(g, edgeFilter = { !it.adjacentToRed })
+        nonePath(noReds)
     }
 }
