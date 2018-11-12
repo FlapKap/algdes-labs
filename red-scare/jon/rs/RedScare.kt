@@ -29,7 +29,7 @@ object RedScare {
     }
 
     private fun nonePath(g: Graph) {
-        val noneGraph = copy(g, edgeFilter = { it.adjacentToSource || it.adjacentToSink || !it.adjacentToRed })
+        val noneGraph = copy(g, edgeFilter = { !it.adjacentToRed })
         val path = DijkstraShortestPath(noneGraph)
         path
                 .getPath(noneGraph.vertices.first { it.isSource }, noneGraph.vertices.first { it.isSink })
