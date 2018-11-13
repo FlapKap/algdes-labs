@@ -1,8 +1,6 @@
 package rs
 
-import edu.uci.ics.jung.algorithms.flows.EdmondsKarpMaxFlow
 import edu.uci.ics.jung.algorithms.shortestpath.DijkstraShortestPath
-import edu.uci.ics.jung.graph.DirectedSparseMultigraph
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -13,37 +11,6 @@ import java.nio.file.Paths
 
 object RedScare {
 
-    private fun copy(
-            g: Graph,
-            vertexFilter: ((Node) -> Boolean)? = null,
-            edgeFilter: ((Edge) -> Boolean)? = null,
-            vertexMapper: ((Node) -> Node)? = null,
-            edgeMapper: ((Edge) -> Edge)? = null
-    ): Graph {
-        val someGraph = DirectedSparseMultigraph<Node, Edge>()
-        var vertices = g.graph.vertices
-        if (vertexFilter != null) {
-            vertices = vertices.filter(vertexFilter)
-        }
-        if (vertexMapper != null) {
-            vertices = vertices.map(vertexMapper)
-        }
-        vertices.forEach {
-            someGraph.addVertex(it)
-        }
-        var edges = g.graph.edges
-        if (edgeFilter != null) {
-            edges = edges.filter(edgeFilter)
-        }
-        if (edgeMapper != null) {
-            edges = edges.map(edgeMapper)
-        }
-        edges.forEach {
-            someGraph.addEdge(it, g.graph.getSource(it), g.graph.getDest(it))
-        }
-        return Graph(someGraph, g.undirected, g.source, g.sink)
-    }
-
     private val buildPathString = { acc: StringBuilder, edge: Edge ->
         acc.append("\t  ${edge.label}\n")
         acc
@@ -51,27 +18,6 @@ object RedScare {
 
     private fun findPath(g: Graph): String {
         return DijkstraShortestPath(g.graph)
-                .getPath(g.source, g.sink)
-                .fold(StringBuilder(), buildPathString)
-                .removeSuffix("\n").toString()
-    }
-
-    private fun findMaxFlow(g: Graph, edgeCapTransformer: (Edge) -> Number): String {
-        val maxFlow = EdmondsKarpMaxFlow(
-                g.graph,
-                g.source,
-                g.sink,
-                { e: Edge? -> edgeCapTransformer(e!!) },
-                mutableMapOf<Edge, Number>(),
-                { Edge() }
-        )
-//        return maxFlow.minCutEdges
-//                .fold(StringBuilder()) { acc, edge ->
-//                    acc.append("\t  ${edge.label}\n")
-//                    return@fold acc
-//                }.removeSuffix("\n").toString()
-        maxFlow.evaluate()
-        return DijkstraShortestPath(maxFlow.flowGraph)
                 .getPath(g.source, g.sink)
                 .fold(StringBuilder(), buildPathString)
                 .removeSuffix("\n").toString()
@@ -86,22 +32,27 @@ object RedScare {
      */
     private fun solveProblems(file: String, g: Graph): String {
 
-        val noReds = copy(g, edgeFilter = { !it.adjacentToRed })
+        val noReds = g.copy(edgeFilter = { !it.adjacentToRed })
         val noRedsPath = findPath(noReds)
 
-        val someReds = copy(g, edgeFilter = { it.adjacentToRed })
+        val someReds = g.copy(edgeFilter = { it.adjacentToRed })
         val someRedsPath = findPath(someReds)
 
-        val many = copy(g, edgeFilter = { !it.adjacentToRed })
+        val many = g.copy(edgeFilter = { !it.adjacentToRed })
         val manyPath =
-                if (g.undirected)
-                    findMaxFlow(many) { 1 }
-                else ""
+                if (g.undirected) {
+                    val mf = g.maxFlow(many) { 1 }
+                    findPath(mf.flowGraph())
+                } else ""
 
-        val few = copy(g)
-        val fewPath = findMaxFlow(few) { 1 }
+        val few = g.copy()
+        val fewPath =
+                if (g.undirected) {
+                    val mf = g.maxFlow(few) { 1 }
+                    findPath(mf.flowGraph())
+                } else ""
 
-        val alternating = copy(g, edgeFilter = {
+        val alternating = g.copy(edgeFilter = {
             it.from.isRed xor it.to.isRed
         })
         val alternatingPath = findPath(alternating)

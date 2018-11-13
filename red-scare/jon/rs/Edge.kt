@@ -9,7 +9,7 @@ data class Edge(
     val adjacentToSource: Boolean = from.isSource || to.isSource
     val adjacentToSink: Boolean = from.isSink || to.isSink
 
-    constructor(): this(
+    constructor() : this(
             "",
             Node(false, "", false, false),
             Node(false, "", false, false)

@@ -61,7 +61,7 @@ object GraphParser {
             g.addEdge(Edge(label, from, to), from, to)
             if (undirected) {
                 val revLabel = "$toLabel -- $fromLabel"
-                g.addEdge(Edge(revLabel, from, to), to, from)
+                g.addEdge(Edge(revLabel, to, from), to, from)
             } else {
                 gUndirected = false
             }
