@@ -8,6 +8,7 @@ import java.io.PrintStream
 import java.lang.StringBuilder
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicInteger
 
 object RedScare {
 
@@ -16,11 +17,15 @@ object RedScare {
         acc
     }
 
-    private fun findPath(g: Graph): String {
-        return DijkstraShortestPath(g.graph)
-                .getPath(g.source, g.sink)
-                .fold(StringBuilder(), buildPathString)
-                .removeSuffix("\n").toString()
+    private fun shortestPath(g: Graph, wf: ((Edge) -> Int)? = null): List<Edge> {
+        val d = if (wf != null) DijkstraShortestPath(g.graph) { e -> wf(e!!) } else DijkstraShortestPath(g.graph)
+        return d.getPath(g.source, g.sink)
+
+    }
+
+    private fun pathString(edges: List<Edge>): String {
+        return edges.fold(StringBuilder(), buildPathString)
+        .removeSuffix("\n").toString()
     }
 
     private fun answer(path: String): String {
@@ -33,46 +38,48 @@ object RedScare {
     private fun solveProblems(file: String, g: Graph): String {
 
         val noReds = g.copy(edgeFilter = { !it.adjacentToRed })
-        val noRedsPath = findPath(noReds)
+        val noRedsPath = shortestPath(noReds)
 
         val someReds = g.copy(edgeFilter = { it.adjacentToRed })
-        val someRedsPath = findPath(someReds)
+        val someRedsPath = shortestPath(someReds)
 
         val many = g.copy(edgeFilter = { !it.adjacentToRed })
-        val manyPath =
-                if (g.undirected) {
-                    val mf = g.maxFlow(many) { 1 }
-                    findPath(mf.flowGraph())
-                } else ""
+        val manyPath = listOf<Edge>()
 
-        val few = g.copy()
-        val fewPath =
-                if (g.undirected) {
-                    val mf = g.maxFlow(few) { 1 }
-                    findPath(mf.flowGraph())
-                } else ""
+        var few = g.copy()
+        var fewPath: List<Edge>
+        do {
+            fewPath = shortestPath(g)
+            if (!fewPath.any { it.adjacentToRed }) {
+                val pathSet = fewPath.toSet()
+                few = few.copy(edgeFilter = { !pathSet.contains(it) && it.adjacentToRed })
+            } else break
+        } while (shortestPath(few).isNotEmpty())
+        if (fewPath.all { !it.adjacentToRed }) {
+            fewPath = listOf()
+        }
 
         val alternating = g.copy(edgeFilter = {
             it.from.isRed xor it.to.isRed
         })
-        val alternatingPath = findPath(alternating)
+        val alternatingPath = shortestPath(alternating)
 
         return """
         ### $file
           None:
-        ${answer(noRedsPath)}
+        ${answer(pathString(noRedsPath))}
 
           Some:
-        ${answer(someRedsPath)}
+        ${answer(pathString(someRedsPath))}
 
           Many:
-        ${answer(manyPath)}
+        ${answer(pathString(manyPath))}
 
           Few:
-        ${answer(fewPath)}
+        ${answer(pathString(fewPath))}
 
           Alternating:
-        ${answer(alternatingPath)}
+        ${answer(pathString(alternatingPath))}
         ###
         """
                 .replace("    ", "")
@@ -105,12 +112,16 @@ object RedScare {
             println(solveProblems(dataPath, graph))
         } else {
             val dataFiles = loadFiles(dataPath)
+            val counter = AtomicInteger(0)
             dataFiles
-                    .parallelStream()
-                    .map { p -> Pair(p.first, GraphParser.parse(p.second)) }
+                    .stream()
+                    .parallel()
+                    .map { p -> Pair(p.first, GraphParser.parse(p.second))}
                     .map { p -> Pair(p.first, solveProblems(p.first, p.second)) }
-                    .sorted(compareBy { it.first })
-                    .forEachOrdered { println(it.second) }
+                    .forEach {
+                        println(it.second)
+                        println("Completed problem ${counter.incrementAndGet()} / ${dataFiles.size}")
+                    }
         }
     }
 }

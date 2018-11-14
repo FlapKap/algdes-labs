@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test
 import rs.Edge
 import rs.Graph
 import rs.Node
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -80,6 +81,28 @@ class RedScareTest {
         val shortestPath = DijkstraShortestPath(onlyReds.graph).getPath(onlyReds.source, onlyReds.sink)
 
         assertTrue(shortestPath.isNotEmpty(), "There should be some path from source to sink")
+    }
+
+    @Test
+    fun fewTest() {
+        val weightFunction = { e: Edge? ->
+            if (e!!.from.isRed && e.to.isRed) {
+                20
+            } else if (e.adjacentToRed) {
+                10
+            } else 1
+        }
+        var copy = gEx.copy()
+        var path: List<Edge>
+        do {
+            path = DijkstraShortestPath(copy.graph, weightFunction).getPath(copy.source, copy.sink)
+            if (!path.any { it.adjacentToRed }) {
+                val pathSet = path.toSet()
+                copy = copy.copy(edgeFilter = { !pathSet.contains(it) && it.adjacentToRed })
+            } else break
+        } while (DijkstraShortestPath(copy.graph).getPath(copy.source, copy.sink).isNotEmpty())
+
+        assertTrue(path.any { it.adjacentToRed }, "Output path contains red nodes!")
     }
 
     /**
