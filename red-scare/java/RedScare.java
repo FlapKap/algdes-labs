@@ -1,6 +1,7 @@
 import edu.princeton.cs.algs4.BreadthFirstDirectedPaths;
 
 import java.io.*;
+import java.util.stream.Collectors;
 
 
 public class RedScare {
@@ -30,8 +31,12 @@ public class RedScare {
         System.out.printf("None: %d\n", withoutRedsPathLength);
         
         //Alternate
-        
+        Graph alternating = graph.copy((from, to) -> from.isRed ^ to.isRed);
+        var alternatingSource = alternating.mapping.get(alternating.source);
+        var alternatingPath = new BreadthFirstDirectedPaths(alternating.asDigraph(), alternatingSource);
+        var alternatingSink = alternating.mapping.get(alternating.sink);
 
-
+        boolean alternatingPathExists = alternatingPath.hasPathTo(alternatingSink);
+        System.out.printf("Alternating: %s\n", alternatingPathExists);
     }
 }

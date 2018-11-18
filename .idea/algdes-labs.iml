@@ -41,6 +41,7 @@
       <sourceFolder url="file://$MODULE_DIR$/flow/jonTest" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/red-scare/jon" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/red-scare/jonTest" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/red-scare/java" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

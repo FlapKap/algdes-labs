@@ -1,8 +1,13 @@
 import edu.princeton.cs.algs4.Digraph;
+import util.jon.Pair;
 
 import java.util.*;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Graph {
     public final boolean directed;
@@ -20,27 +25,27 @@ public class Graph {
         this.edges = edges;
         this.directed = directed;
         this.source = source;
-        this.sink = sink;   
+        this.sink = sink;
         int i = 0;
-        for (Node node : nodes) {            
+        for (Node node : nodes) {
             mapping.put(node, i++);
         }
 
-        if(this.source == null || this.sink == null) {
+        if (this.source == null || this.sink == null) {
             // No path should exists if source nor sink is a part of the set
             throw new IllegalArgumentException("Source or sink are not connected with edges");
         }
     }
 
-    public Set<Node> getNodes(){
+    public Set<Node> getNodes() {
         return nodes;
     }
 
-    public Graph copy(Predicate<Node> filter){
+    public Graph copy(Predicate<Node> filter) {
         var filteredNodes = nodes.stream()
-            .filter(filter)
-            .collect(Collectors.toSet());
-            
+                .filter(filter)
+                .collect(Collectors.toSet());
+
         // var filteredNodes = new ArrayList<Node>(nodes);
         // filteredNodes.removeIf(filter.negate());
 
@@ -51,8 +56,41 @@ public class Graph {
         return new Graph(filteredNodes, filteredEdges, source, sink, directed);
     }
 
-    public Graph copy(Predicate<MapEntry<Node, Set<Node>>> edgeFilter) {
-        
+    public Graph copy(BiPredicate<Node, Node> edgeFilter) {
+        Supplier<Stream<Pair<Node, Node>>> filteredEdgesAsPairs = () -> edges.entrySet().stream()
+                .flatMap(entry -> {
+                    var from = entry.getKey();
+                    return entry.getValue().stream()
+                            .map(to -> Pair.of(from, to));
+                })
+                .filter(p -> edgeFilter.test(p.left, p.right));
+        var filteredNodes = nodes.stream()
+                .filter(n -> filteredEdgesAsPairs.get()
+                        .anyMatch(p -> p.left.equals(n) || p.right.equals(n))
+                )
+                .collect(Collectors.toSet());
+        var filteredEdges = filteredEdgesAsPairs.get()
+                .reduce(
+                        new HashMap<Node, Set<Node>>(),
+                        (acc, edge) -> {
+                            if (!acc.containsKey(edge.left)) {
+                                acc.put(edge.left, new HashSet<>());
+                            }
+                            acc.get(edge.left).add(edge.right);
+                            return acc;
+                        },
+                        (l, r) -> {
+                            for (Map.Entry<Node, Set<Node>> entry: r.entrySet()) {
+                                if (l.containsKey(entry.getKey())) {
+                                    l.get(entry.getKey()).addAll(entry.getValue());
+                                } else {
+                                    l.put(entry.getKey(), entry.getValue());
+                                }
+                            }
+                            return l;
+                        }
+                );
+        return new Graph(filteredNodes, filteredEdges, source, sink, directed);
     }
 
     public Digraph asDigraph() {
