@@ -27,7 +27,11 @@ public class RedScare {
         var withoutRedsSink = withoutReds.mapping.get(withoutReds.sink);
 
         int withoutRedsPathLength = (withoutRedsPath.hasPathTo(withoutRedsSink)) ? withoutRedsPath.distTo(withoutRedsSink) : -1;
-
+        System.out.printf("None: %d\n", withoutRedsPathLength);
         
+        //Alternate
+        
+
+
     }
 }

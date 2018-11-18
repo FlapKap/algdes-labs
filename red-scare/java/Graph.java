@@ -44,23 +44,28 @@ public class Graph {
         // var filteredNodes = new ArrayList<Node>(nodes);
         // filteredNodes.removeIf(filter.negate());
 
-        Map<Node, Set<Node>> filteredEdges = new HashMap(edges);
+        Map<Node, Set<Node>> filteredEdges = new HashMap<>(edges);
         filteredEdges.keySet().removeIf(filter.negate());
+        filteredEdges.values().forEach(s -> s.removeIf(filter.negate()));
 
         return new Graph(filteredNodes, filteredEdges, source, sink, directed);
+    }
+
+    public Graph copy(Predicate<MapEntry<Node, Set<Node>>> edgeFilter) {
+        
     }
 
     public Digraph asDigraph() {
         var graph = new Digraph(nodes.size());
 
-        for (Map.Entry<Node, Set<Node>> edgeSet : edges.entrySet()) {
-            for(Node v : edgeSet.getValue()){
-                graph.addEdge(mapping.get(edgeSet.getKey()), mapping.get(v));
-                if(directed) { 
-                    graph.addEdge(mapping.get(mapping.get(v)), mapping.get(edgeSet.getKey()));
+        edges.forEach((key, value) -> {
+            for (Node v : value) {
+                graph.addEdge(mapping.get(key), mapping.get(v));
+                if (directed) {
+                    graph.addEdge(mapping.get(v), mapping.get(key));
                 }
             }
-        }
+        });
         return graph;
     }
 }
