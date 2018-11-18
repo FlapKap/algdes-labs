@@ -17,15 +17,17 @@ object RedScare {
         acc
     }
 
-    private fun shortestPath(g: Graph, wf: ((Edge) -> Int)? = null): List<Edge> {
-        val d = if (wf != null) DijkstraShortestPath(g.graph) { e -> wf(e!!) } else DijkstraShortestPath(g.graph)
+    private fun shortestPath(g: Graph, wf: ((Edge) -> Number)? = null): List<Edge> {
+        val d = if (wf != null)
+            DijkstraShortestPath(g.graph) { wf(it!!) }
+        else
+            DijkstraShortestPath(g.graph)
         return d.getPath(g.source, g.sink)
-
     }
 
     private fun pathString(edges: List<Edge>): String {
         return edges.fold(StringBuilder(), buildPathString)
-        .removeSuffix("\n").toString()
+                .removeSuffix("\n").toString()
     }
 
     private fun answer(path: String): String {
@@ -40,11 +42,27 @@ object RedScare {
         val noReds = g.copy(edgeFilter = { !it.adjacentToRed })
         val noRedsPath = shortestPath(noReds)
 
-        val someReds = g.copy(edgeFilter = { it.adjacentToRed })
-        val someRedsPath = shortestPath(someReds)
+//        val someReds = g.copy(edgeFilter = { it.adjacentToRed })
+        val someRedsPath = listOf<Edge>()//shortestPath(someReds)
 
-        val many = g.copy(edgeFilter = { !it.adjacentToRed })
-        val manyPath = listOf<Edge>()
+        val many = g.copy()
+        fun incidentHeuristic (e: Edge): Int {
+            return g.graph.getIncidentEdges(e.to)
+                    .fold(0) { acc, edge ->
+                        if (edge.adjacentToRed) {
+                            acc - 1
+                        } else acc + 1
+                    }
+        }
+        fun peakAheadHeuristic (e: Edge): Int {
+            return g.graph.getIncidentEdges(e.to)
+                    .filter { it != e }
+                    .map { incidentHeuristic(it) }
+                    .sum()
+        }
+        val manyPath = shortestPath(many) { e ->
+            (Int.MAX_VALUE / 2) + incidentHeuristic(e) + peakAheadHeuristic(e)
+        }
 
         var few = g.copy()
         var fewPath: List<Edge>
@@ -116,7 +134,7 @@ object RedScare {
             dataFiles
                     .stream()
                     .parallel()
-                    .map { p -> Pair(p.first, GraphParser.parse(p.second))}
+                    .map { p -> Pair(p.first, GraphParser.parse(p.second)) }
                     .map { p -> Pair(p.first, solveProblems(p.first, p.second)) }
                     .forEach {
                         println(it.second)
