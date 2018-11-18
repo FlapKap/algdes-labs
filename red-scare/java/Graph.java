@@ -1,13 +1,12 @@
 import edu.princeton.cs.algs4.Digraph;
-import util.jon.Pair;
+import edu.princeton.cs.algs4.DirectedEdge;
+import edu.princeton.cs.algs4.EdgeWeightedDigraph;
+
 
 import java.util.*;
-import java.util.function.BiPredicate;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 
 public class Graph {
     public final boolean directed;
@@ -57,39 +56,20 @@ public class Graph {
     }
 
     public Graph copy(BiPredicate<Node, Node> edgeFilter) {
-        Supplier<Stream<Pair<Node, Node>>> filteredEdgesAsPairs = () -> edges.entrySet().stream()
-                .flatMap(entry -> {
-                    var from = entry.getKey();
-                    return entry.getValue().stream()
-                            .map(to -> Pair.of(from, to));
-                })
-                .filter(p -> edgeFilter.test(p.left, p.right));
-        var filteredNodes = nodes.stream()
-                .filter(n -> filteredEdgesAsPairs.get()
-                        .anyMatch(p -> p.left.equals(n) || p.right.equals(n))
-                )
-                .collect(Collectors.toSet());
-        var filteredEdges = filteredEdgesAsPairs.get()
-                .reduce(
-                        new HashMap<Node, Set<Node>>(),
-                        (acc, edge) -> {
-                            if (!acc.containsKey(edge.left)) {
-                                acc.put(edge.left, new HashSet<>());
-                            }
-                            acc.get(edge.left).add(edge.right);
-                            return acc;
-                        },
-                        (l, r) -> {
-                            for (Map.Entry<Node, Set<Node>> entry: r.entrySet()) {
-                                if (l.containsKey(entry.getKey())) {
-                                    l.get(entry.getKey()).addAll(entry.getValue());
-                                } else {
-                                    l.put(entry.getKey(), entry.getValue());
-                                }
-                            }
-                            return l;
-                        }
-                );
+        var filteredEdges = new HashMap<Node, Set<Node>>();
+        var filteredNodes = new HashSet<Node>();
+        
+        edges.forEach((key, neighbours) -> {
+            filteredEdges.putIfAbsent(key, new HashSet<>());
+            for (Node neighbour : neighbours) {
+                if(edgeFilter.test(key, neighbour)) {
+                    filteredNodes.add(key);
+                    filteredNodes.add(neighbour);                    
+                    filteredEdges.get(key).add(neighbour);                    
+                }
+            }
+        });
+        
         return new Graph(filteredNodes, filteredEdges, source, sink, directed);
     }
 
@@ -99,11 +79,29 @@ public class Graph {
         edges.forEach((key, value) -> {
             for (Node v : value) {
                 graph.addEdge(mapping.get(key), mapping.get(v));
-                if (directed) {
+                if (!directed) {
                     graph.addEdge(mapping.get(v), mapping.get(key));
                 }
             }
         });
+        return graph;
+    }
+
+    public EdgeWeightedDigraph asEdgeWeightedDigraph(BiFunction<Node, Node, Integer> weightFunction) {
+        var graph = new EdgeWeightedDigraph(nodes.size());
+        
+        edges.forEach((key, value) -> {
+            for (Node v: value) {
+                int from = mapping.get(key);
+                int to = mapping.get(v);
+                int weight = weightFunction.apply(key, v);
+                graph.addEdge(new DirectedEdge(from, to, weight));
+                if(!directed) {
+                    graph.addEdge(new DirectedEdge(to, from, weight));
+                }
+            }
+        });
+
         return graph;
     }
 }
