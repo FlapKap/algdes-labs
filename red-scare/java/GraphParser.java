@@ -45,7 +45,7 @@ public class GraphParser {
             }
         }
 
-        return new Graph(adj.keySet(), adj, nodes.get(s), nodes.get(t), directed);
+        return new Graph(adj.keySet(), adj, nodes.get(s), nodes.get(t), directed, n, m, r);
     }
 
 }
