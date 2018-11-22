@@ -1,6 +1,4 @@
-import edu.princeton.cs.algs4.Digraph;
-import edu.princeton.cs.algs4.DirectedEdge;
-import edu.princeton.cs.algs4.EdgeWeightedDigraph;
+import edu.princeton.cs.algs4.*;
 
 
 import java.util.*;
@@ -11,6 +9,9 @@ import java.util.stream.Collectors;
 public class Graph {
     public final boolean directed;
 
+    public final int V;
+    public final int E;
+    public final int R;
     public final Node source;
     public final Node sink;
 
@@ -19,12 +20,15 @@ public class Graph {
     Set<Node> nodes;
     Map<Node, Set<Node>> edges;
 
-    public Graph(Set<Node> nodes, Map<Node, Set<Node>> edges, Node source, Node sink, boolean directed) {
+    public Graph(Set<Node> nodes, Map<Node, Set<Node>> edges, Node source, Node sink, boolean directed, int V, int E, int R) {
         this.nodes = nodes;
         this.edges = edges;
         this.directed = directed;
         this.source = source;
         this.sink = sink;
+        this.V = V;
+        this.E = E;
+        this.R = R;
         int i = 0;
         for (Node node : nodes) {
             mapping.put(node, i++);
@@ -52,7 +56,7 @@ public class Graph {
         filteredEdges.keySet().removeIf(filter.negate());
         filteredEdges.values().forEach(s -> s.removeIf(filter.negate()));
 
-        return new Graph(filteredNodes, filteredEdges, source, sink, directed);
+        return new Graph(filteredNodes, filteredEdges, source, sink, directed, V, E, R);
     }
 
     public Graph copy(BiPredicate<Node, Node> edgeFilter) {
@@ -70,7 +74,7 @@ public class Graph {
             }
         });
         
-        return new Graph(filteredNodes, filteredEdges, source, sink, directed);
+        return new Graph(filteredNodes, filteredEdges, source, sink, directed, V, E, R);
     }
 
     public Digraph asDigraph() {
@@ -90,11 +94,11 @@ public class Graph {
     public EdgeWeightedDigraph asEdgeWeightedDigraph(BiFunction<Node, Node, Integer> weightFunction) {
         var graph = new EdgeWeightedDigraph(nodes.size());
         
-        edges.forEach((key, value) -> {
-            for (Node v: value) {
-                int from = mapping.get(key);
-                int to = mapping.get(v);
-                int weight = weightFunction.apply(key, v);
+        edges.forEach((node, neighbours) -> {
+            int from = mapping.get(node);
+            for (Node n: neighbours) {
+                int to = mapping.get(n);
+                int weight = weightFunction.apply(node, n);
                 graph.addEdge(new DirectedEdge(from, to, weight));
                 if(!directed) {
                     graph.addEdge(new DirectedEdge(to, from, weight));
@@ -103,6 +107,28 @@ public class Graph {
         });
 
         return graph;
+    }
+
+    public FlowNetwork asFlowNetwork(BiFunction<Node, Node, Integer> capacityFunction){
+        return asFlowNetwork(null, capacityFunction);
+    }
+
+    public FlowNetwork asFlowNetwork(Integer newSize, BiFunction<Node, Node, Integer> capacityFunction){
+        if (directed) throw new UnsupportedOperationException("Frick off. This only works for undirected graphs");
+
+        var flowGraph = (newSize == null) ? new FlowNetwork(V) : new FlowNetwork(newSize);
+
+        edges.forEach((node, neighbours) -> {
+            int from = mapping.get(node);
+            for (Node n: neighbours) {
+                int to = mapping.get(n);
+                int capacity = capacityFunction.apply(node, n);
+                flowGraph.addEdge(new FlowEdge(from, to, capacity));
+                flowGraph.addEdge(new FlowEdge(to, from, capacity));
+            }
+        });
+
+        return flowGraph;
     }
 }
 
