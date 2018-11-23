@@ -39,6 +39,7 @@ public class RedScare {
 
         //print latex table
         System.out.println("AWESOME LATEX TABLE INCOMING BITCHES 👌👌👌");
+        System.out.println("-------------------------------------------------");
         var sb = new StringBuilder();
         sb.append("\\begin{longtable}{lrrrrrr}\n" +
                 "  \\toprule\n" +
@@ -58,10 +59,12 @@ public class RedScare {
         ));
         sb.append("  \\bottomrule\n\\end{longtable}");
         System.out.println(sb);
+        System.out.println("-------------------------------------------------");
         System.out.println("HOLY FUCK THAT TABLE IS AMAZING 😲 💻 💼💼💼");
 
 
         System.out.println("IT WAS SO AWESOME WE HAVE TO DO IT AGAIN (to make the result.txt file)");
+        System.out.println("-------------------------------------------------");
         var sb2 = new StringBuilder();
         sb2.append("name\tn\tA\tF\tM\tN\tS\n");
 
@@ -77,6 +80,7 @@ public class RedScare {
                 )
         ));
         System.out.println(sb2);
+        System.out.println("-------------------------------------------------");
         System.out.println("JESUS CHRIST I LOVE IT");
 
     }
