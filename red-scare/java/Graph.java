@@ -53,8 +53,9 @@ public class Graph {
         // filteredNodes.removeIf(filter.negate());
 
         Map<Node, Set<Node>> filteredEdges = new HashMap<>(edges);
-        filteredEdges.keySet().removeIf(filter.negate());
-        filteredEdges.values().forEach(s -> s.removeIf(filter.negate()));
+        var negatedFilter = filter.negate();
+        filteredEdges.keySet().removeIf(negatedFilter);
+        filteredEdges.values().forEach(s -> s.removeIf(negatedFilter));
 
         return new Graph(filteredNodes, filteredEdges, source, sink, directed, V, E, R);
     }

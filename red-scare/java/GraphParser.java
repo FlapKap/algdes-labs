@@ -19,9 +19,10 @@ public class GraphParser {
             if(line.isEmpty()) continue;
             var isRed = line.endsWith(" *");
             var label = (isRed) ? line.substring(0, line.length() - 2) : line; //remove the ' *'
+            var trimmed = label.trim();
             nodes.put(
-                    label,
-                    new Node(isRed, label, label.equals(s), label.equals(t))
+                    trimmed,
+                    new Node(isRed, trimmed, trimmed.equals(s), trimmed.equals(t))
                     );
         }
 
@@ -45,7 +46,7 @@ public class GraphParser {
             }
         }
 
-        return new Graph(adj.keySet(), adj, nodes.get(s), nodes.get(t), directed, n, m, r);
+        return new Graph(new HashSet<>(nodes.values()), adj, nodes.get(s), nodes.get(t), directed, n, m, r);
     }
 
 }
