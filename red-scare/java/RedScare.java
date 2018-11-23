@@ -3,6 +3,9 @@ import edu.princeton.cs.algs4.*;
 import java.io.*;
 import java.util.*;
 import java.util.stream.StreamSupport;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 
 
 public class RedScare {
@@ -25,17 +28,71 @@ public class RedScare {
         } else {
             streams.put("Stdin", System.in);
         }
-
+        Map<String, Map<Problem, String>> results = new TreeMap<>();
+        Map<String, Graph> graphs = new HashMap<>();
         streams.forEach((name, stream) -> {
             Graph graph = GraphParser.parse(stream);
+            graphs.put(name, graph);
             System.out.printf("Running on: %s\n", name);
-            runProblemsAndPrint(graph);
+            results.put(name, runProblemsAndPrint(graph));
         });
+
+        //print latex table
+        System.out.println("AWESOME LATEX TABLE INCOMING BITCHES 👌👌👌");
+        var sb = new StringBuilder();
+        sb.append("\\begin{longtable}{lrrrrrr}\n" +
+                "  \\toprule\n" +
+                "  Instance name & $n$ & A & F & M & N & S \\\\\n" +
+                "  \\midrule\n");
+
+        results.forEach((name, result) -> sb.append(String.format(
+                "    %s & %d & %s & %s & %s & %s & %s \\\\ \n",
+                name,
+                graphs.get(name).V,
+                result.get(Problem.Alternate),
+                result.get(Problem.Few),
+                result.get(Problem.Many),
+                result.get(Problem.None),
+                result.get(Problem.Some)
+                )
+        ));
+        sb.append("  \\bottomrule\n\\end{longtable}");
+        System.out.println(sb);
+        System.out.println("HOLY FUCK THAT TABLE IS AMAZING 😲 💻 💼💼💼");
+
+
+        System.out.println("IT WAS SO AWESOME WE HAVE TO DO IT AGAIN (to make the result.txt file)");
+        var sb2 = new StringBuilder();
+        sb2.append("name\tn\tA\tF\tM\tN\tS\n");
+
+        results.forEach((name, result) -> sb2.append(String.format(
+                "%s\t%d\t%s\t%s\t%s\t%s\t%s\n",
+                name,
+                graphs.get(name).V,
+                result.get(Problem.Alternate),
+                result.get(Problem.Few),
+                result.get(Problem.Many),
+                result.get(Problem.None),
+                result.get(Problem.Some)
+                )
+        ));
+        System.out.println(sb2);
+        System.out.println("JESUS CHRIST I LOVE IT");
 
     }
 
-    private static void runProblemsAndPrint(Graph graph) {
+    enum Problem{
+        None,
+        Some,
+        Many,
+        Few,
+        Alternate
+    }
+
+    private static Map<Problem, String> runProblemsAndPrint(Graph graph) {
+        Map<Problem, String> result = new HashMap<>();
         //None
+
         Graph withoutReds = graph.copy((n) -> !n.isRed || (n.isSource || n.isSink));
         int withoutRedsSource = withoutReds.mapping.get(withoutReds.source);
         var withoutRedsPath = new BreadthFirstDirectedPaths(withoutReds.asDigraph(), withoutRedsSource);
@@ -43,6 +100,8 @@ public class RedScare {
 
         int withoutRedsPathLength = (withoutRedsPath.hasPathTo(withoutRedsSink)) ? withoutRedsPath.distTo(withoutRedsSink) : -1;
         System.out.printf("None: %d\n", withoutRedsPathLength);
+        result.put(Problem.None, Integer.toString(withoutRedsPathLength));
+
 
         // Some
         if (!graph.directed) {
@@ -60,10 +119,13 @@ public class RedScare {
                 }
             }
             FordFulkerson maxFlow = new FordFulkerson(someGraph, sPrime, tPrime);
-            boolean someAnswer = ((int) maxFlow.value()) == 2;
+
+            boolean someAnswer = ((int) maxFlow.value()) >= 2;
             System.out.printf("Some: %s\n", someAnswer);
+            result.put(Problem.Some, Boolean.toString(someAnswer));
         } else {
             System.out.printf("Some: %s\n", false);
+            result.put(Problem.Some, "false");
         }
         //TODO: somehow make sure that the path is simple -> that it does not hit the same vertex twice
 
@@ -98,6 +160,7 @@ public class RedScare {
             //TODO: handle exception
         } finally {
             System.out.printf("Many: %s\n", numRedVertices);
+            result.put(Problem.Many, Integer.toString(numRedVertices));
         }
 
         //Few
@@ -112,7 +175,7 @@ public class RedScare {
             if (graph.sink.isRed) fewCount++;
         }
         System.out.printf("Few: %d\n", fewCount);
-
+        result.put(Problem.Few, Integer.toString(fewCount));
 
         //Alternate
         Graph alternating = graph.copy((from, to) -> from.isRed ^ to.isRed); //XOR - both can't be the same
@@ -125,5 +188,8 @@ public class RedScare {
         }
         System.out.printf("Alternate: %s\n", alternatingPathExists);
         System.out.println();
+        result.put(Problem.Alternate, Boolean.toString(alternatingPathExists));
+
+        return result;
     }
 }
