@@ -39,7 +39,11 @@ class Graph(
         return Graph(someGraph, undirected, source, sink)
     }
 
-    fun maxFlow(g: Graph, edgeCapTransformer: (Edge) -> Number): MaxFlow {
-        return MaxFlow(g, edgeCapTransformer)
+    fun maxFlow(source: Node, sink: Node, edgeCapTransformer: (Edge) -> Number): MaxFlow {
+        return MaxFlow(this, source, sink, edgeCapTransformer)
+    }
+
+    fun maxFlow(edgeCapTransformer: (Edge) -> Number): MaxFlow {
+        return MaxFlow(this, source, sink, edgeCapTransformer)
     }
 }

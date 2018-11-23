@@ -42,11 +42,39 @@ object RedScare {
         val noReds = g.copy(edgeFilter = { !it.adjacentToRed })
         val noRedsPath = shortestPath(noReds)
 
-//        val someReds = g.copy(edgeFilter = { it.adjacentToRed })
-        val someRedsPath = listOf<Edge>()//shortestPath(someReds)
+        val someReds = g.copy()
+        val someTerminalSource = Node(false, "terminal-source")
+        val someRedSink = Node(false, "red-sink")
+        someReds.graph.addVertex(someTerminalSource)
+        listOf(someReds.source, someReds.sink)
+                .forEach {
+                    someReds.graph.addEdge(
+                            Edge("terminal-source--${it.label}", it, someTerminalSource),
+                            it,
+                            someTerminalSource
+                    )
+                    someReds.graph.addEdge(
+                            Edge("${it.label}--terminal-source", someTerminalSource, it),
+                            someTerminalSource,
+                            it
+                    )
+                }
+        someReds.graph.addVertex(someRedSink)
+        someReds.graph.vertices
+                .filter { it.isRed }
+                .forEach {
+                    someReds.graph.addEdge(Edge("${it.label}--red-sink", it, someRedSink), it, someRedSink)
+                    someReds.graph.addEdge(Edge("red-sink--${it.label}", someRedSink, it), someRedSink, it)
+                }
+        val maxFlow = someReds.maxFlow(someTerminalSource, someRedSink) {
+            if (it.to == someRedSink) {
+                2
+            } else 1
+        }
+        val someAnswer = maxFlow.maxFlow == 2
 
         val many = g.copy()
-        fun incidentHeuristic (e: Edge): Int {
+        fun incidentHeuristic(e: Edge): Int {
             return g.graph.getIncidentEdges(e.to)
                     .fold(0) { acc, edge ->
                         if (edge.adjacentToRed) {
@@ -54,12 +82,14 @@ object RedScare {
                         } else acc + 1
                     }
         }
-        fun peakAheadHeuristic (e: Edge): Int {
+
+        fun peakAheadHeuristic(e: Edge): Int {
             return g.graph.getIncidentEdges(e.to)
                     .filter { it != e }
                     .map { incidentHeuristic(it) }
                     .sum()
         }
+
         val manyPath = shortestPath(many) { e ->
             (Int.MAX_VALUE / 2) + incidentHeuristic(e) + peakAheadHeuristic(e)
         }
@@ -88,7 +118,7 @@ object RedScare {
         ${answer(pathString(noRedsPath))}
 
           Some:
-        ${answer(pathString(someRedsPath))}
+        $someAnswer
 
           Many:
         ${answer(pathString(manyPath))}

@@ -1,9 +1,7 @@
 import edu.princeton.cs.algs4.*;
 
-
 import java.util.*;
 import java.util.function.*;
-import java.util.stream.Collectors;
 
 
 public class Graph {
@@ -45,17 +43,21 @@ public class Graph {
     }
 
     public Graph copy(Predicate<Node> filter) {
-        var filteredNodes = nodes.stream()
-                .filter(filter)
-                .collect(Collectors.toSet());
+        var filteredEdges = new HashMap<Node, Set<Node>>();
+        edges.forEach((node, adj) -> {
+            if (filter.test(node)) {
+                var newAdj = new HashSet<Node>();
+                filteredEdges.put(node, newAdj);
+                adj.forEach(n -> {
+                    if (filter.test(n)) newAdj.add(n);
+                });
+            }
+        });
+        var filteredNodes = new HashSet<>(nodes);
+        nodes.forEach(n -> {
+            if (filter.test(n)) filteredNodes.add(n);
+        });
 
-        // var filteredNodes = new ArrayList<Node>(nodes);
-        // filteredNodes.removeIf(filter.negate());
-
-        Map<Node, Set<Node>> filteredEdges = new HashMap<>(edges);
-        var negatedFilter = filter.negate();
-        filteredEdges.keySet().removeIf(negatedFilter);
-        filteredEdges.values().forEach(s -> s.removeIf(negatedFilter));
 
         return new Graph(filteredNodes, filteredEdges, source, sink, directed, V, E, R);
     }
@@ -63,18 +65,18 @@ public class Graph {
     public Graph copy(BiPredicate<Node, Node> edgeFilter) {
         var filteredEdges = new HashMap<Node, Set<Node>>();
         var filteredNodes = new HashSet<Node>();
-        
+
         edges.forEach((key, neighbours) -> {
             filteredEdges.putIfAbsent(key, new HashSet<>());
             for (Node neighbour : neighbours) {
-                if(edgeFilter.test(key, neighbour)) {
+                if (edgeFilter.test(key, neighbour)) {
                     filteredNodes.add(key);
-                    filteredNodes.add(neighbour);                    
-                    filteredEdges.get(key).add(neighbour);                    
+                    filteredNodes.add(neighbour);
+                    filteredEdges.get(key).add(neighbour);
                 }
             }
         });
-        
+
         return new Graph(filteredNodes, filteredEdges, source, sink, directed, V, E, R);
     }
 
@@ -94,14 +96,14 @@ public class Graph {
 
     public EdgeWeightedDigraph asEdgeWeightedDigraph(BiFunction<Node, Node, Integer> weightFunction) {
         var graph = new EdgeWeightedDigraph(nodes.size());
-        
+
         edges.forEach((node, neighbours) -> {
             int from = mapping.get(node);
-            for (Node n: neighbours) {
+            for (Node n : neighbours) {
                 int to = mapping.get(n);
                 int weight = weightFunction.apply(node, n);
                 graph.addEdge(new DirectedEdge(from, to, weight));
-                if(!directed) {
+                if (!directed) {
                     graph.addEdge(new DirectedEdge(to, from, weight));
                 }
             }
@@ -110,11 +112,11 @@ public class Graph {
         return graph;
     }
 
-    public FlowNetwork asFlowNetwork(BiFunction<Node, Node, Integer> capacityFunction){
+    public FlowNetwork asFlowNetwork(BiFunction<Node, Node, Integer> capacityFunction) {
         return asFlowNetwork(null, capacityFunction);
     }
 
-    public FlowNetwork asFlowNetwork(Integer newSize, BiFunction<Node, Node, Integer> capacityFunction){
+    public FlowNetwork asFlowNetwork(Integer newSize, BiFunction<Node, Node, Integer> capacityFunction) {
         //if (directed) throw new UnsupportedOperationException("Frick off. This only works for undirected graphs");
         //after pondering a bit, i think the above is a mistake -khjo
 
@@ -122,17 +124,28 @@ public class Graph {
 
         edges.forEach((node, neighbours) -> {
             int from = mapping.get(node);
-            for (Node n: neighbours) {
+            for (Node n : neighbours) {
                 int to = mapping.get(n);
                 int capacity = capacityFunction.apply(node, n);
                 flowGraph.addEdge(new FlowEdge(from, to, capacity));
-                if(!directed) {
+                if (!directed) {
                     flowGraph.addEdge(new FlowEdge(to, from, capacity));
                 }
             }
         });
 
         return flowGraph;
+    }
+
+    @Override
+    public String toString() {
+        var output = new StringBuilder();
+        edges.forEach(((n, adj) -> {
+            for (Node m : adj) {
+                output.append(String.format("%s -> %s\n", n.label, m.label));
+            }
+        }));
+        return output.toString();
     }
 }
 

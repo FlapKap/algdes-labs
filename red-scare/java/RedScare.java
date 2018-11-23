@@ -1,12 +1,8 @@
 import edu.princeton.cs.algs4.*;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Flow;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.stream.StreamSupport;
 
 
 public class RedScare {
@@ -72,39 +68,36 @@ public class RedScare {
         //TODO: somehow make sure that the path is simple -> that it does not hit the same vertex twice
 
         //Many
-        if (graph.directed) {
-            Graph same = graph.copy((n) -> true);
-            int sameSink = same.mapping.get(same.source);
-            int sameSource = same.mapping.get(same.sink);
-            var edgeWeightedDiGraph = same.asEdgeWeightedDigraph((from, to) -> {
-                if (from.isRed && to.isRed) {
-                    return -2;
-                }
-                if (from.isRed) {
-                    return -1;
-                } else if (to.isRed) {
-                    return -1;
-                }
-                return 1;
-            });
-            var bellmanFord = new BellmanFordSP(edgeWeightedDiGraph, sameSource);
-            int numRedVertices = -1;
-            try {
-                if (bellmanFord.hasPathTo(sameSink)) {
-                    var iterPath = bellmanFord.pathTo(sameSink);
-                    numRedVertices = 0;
-                    for (DirectedEdge s : iterPath) {
-                        if (s.weight() < 0 && s.weight() > -1.5) numRedVertices += 1;
-                        if (s.weight() < -1.5) numRedVertices += 2;
-                    }
-                }
-            } catch (Exception e) {
-                //TODO: handle exception
-            } finally {
-                System.out.printf("Many: %s\n", numRedVertices > 0 ? numRedVertices : -1);
+        Graph same = graph.copy((n) -> true);
+        var lookup = new TreeMap<Integer, Node>();
+        same.mapping.forEach((n, i) -> lookup.put(i, n));
+        int sameSource = same.mapping.get(same.source);
+        int sameSink = same.mapping.get(same.sink);
+        var edgeWeightedDiGraph = same.asEdgeWeightedDigraph((from, to) -> {
+            if (from.isRed && to.isRed) {
+                return -2;
             }
-        } else {
-            System.out.printf("Many: %s\n", -1);
+            if (from.isRed) {
+                return -1;
+            } else if (to.isRed) {
+                return -1;
+            }
+            return 0;
+        });
+        var bellmanFord = new BellmanFordSP(edgeWeightedDiGraph, sameSource);
+        int numRedVertices = -1;
+        try {
+            if (same.directed && bellmanFord.hasPathTo(sameSink)) {
+                var iterPath = bellmanFord.pathTo(sameSink);
+                numRedVertices = StreamSupport.stream(iterPath.spliterator(), false)
+                        .map(e -> ((lookup.get(e.from()).isRed) ? 1 : 0) + ((lookup.get(e.from()).isRed) ? 1 : 0))
+                        .mapToInt(e -> e)
+                        .sum();
+            }
+        } catch (Exception e) {
+            //TODO: handle exception
+        } finally {
+            System.out.printf("Many: %s\n", numRedVertices);
         }
 
         //Few

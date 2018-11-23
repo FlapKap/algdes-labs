@@ -1,12 +1,15 @@
 package rs
 
 import edu.uci.ics.jung.algorithms.flows.EdmondsKarpMaxFlow
+import java.util.concurrent.ThreadLocalRandom
 
 /**
  * Wrapper for the EdmondsKarp-MaxFlow algorithm result.
  */
 class MaxFlow(
         private val graph: Graph,
+        private val source: Node,
+        private val sink: Node,
         edgeCapTransformer: (Edge) -> Number
 ) : EdmondsKarpMaxFlow<Node, Edge>(
         graph.graph,
@@ -14,7 +17,7 @@ class MaxFlow(
         graph.sink,
         { e: Edge? -> edgeCapTransformer(e!!) },
         mutableMapOf<Edge, Number>(),
-        { Edge() }
+        { Edge("${ThreadLocalRandom.current().nextInt()}", Node(false, ""), Node(false, "")) }
 ) {
     init {
         evaluate()
