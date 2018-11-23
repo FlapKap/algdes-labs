@@ -115,7 +115,8 @@ public class Graph {
     }
 
     public FlowNetwork asFlowNetwork(Integer newSize, BiFunction<Node, Node, Integer> capacityFunction){
-        if (directed) throw new UnsupportedOperationException("Frick off. This only works for undirected graphs");
+        //if (directed) throw new UnsupportedOperationException("Frick off. This only works for undirected graphs");
+        //after pondering a bit, i think the above is a mistake -khjo
 
         var flowGraph = (newSize == null) ? new FlowNetwork(V) : new FlowNetwork(newSize);
 
@@ -125,7 +126,9 @@ public class Graph {
                 int to = mapping.get(n);
                 int capacity = capacityFunction.apply(node, n);
                 flowGraph.addEdge(new FlowEdge(from, to, capacity));
-                flowGraph.addEdge(new FlowEdge(to, from, capacity));
+                if(!directed) {
+                    flowGraph.addEdge(new FlowEdge(to, from, capacity));
+                }
             }
         });
 
