@@ -46,17 +46,21 @@ public class RedScare {
                 "  Instance name & $n$ & A & F & M & N & S \\\\\n" +
                 "  \\midrule\n");
 
-        results.forEach((name, result) -> sb.append(String.format(
-                "    %s & %d & %s & %s & %s & %s & %s \\\\ \n",
-                name,
-                graphs.get(name).V,
-                result.get(Problem.Alternate),
-                result.get(Problem.Few),
-                result.get(Problem.Many),
-                result.get(Problem.None),
-                result.get(Problem.Some)
-                )
-        ));
+        results.forEach((name, result) -> {
+            if (graphs.get(name).V >= 500) {
+                sb.append(String.format(
+                        "    %s & %d & %s & %s & %s & %s & %s \\\\ \n",
+                        name,
+                        graphs.get(name).V,
+                        result.get(Problem.Alternate),
+                        result.get(Problem.Few),
+                        result.get(Problem.Many),
+                        result.get(Problem.None),
+                        result.get(Problem.Some)
+                        )
+                );
+            }
+        });
         sb.append("  \\bottomrule\n\\end{longtable}");
         System.out.println(sb);
         System.out.println("-------------------------------------------------");
@@ -78,20 +82,21 @@ public class RedScare {
                 result.get(Problem.None),
                 result.get(Problem.Some)
                 )
-        ));
+                )
+        );
         System.out.println(sb2);
         System.out.println("-------------------------------------------------");
         System.out.println("JESUS CHRIST I LOVE IT");
 
-    }
+}
 
-    enum Problem{
-        None,
-        Some,
-        Many,
-        Few,
-        Alternate
-    }
+enum Problem {
+    None,
+    Some,
+    Many,
+    Few,
+    Alternate
+}
 
     private static Map<Problem, String> runProblemsAndPrint(Graph graph) {
         Map<Problem, String> result = new HashMap<>();
@@ -109,24 +114,27 @@ public class RedScare {
 
         // Some
         if (!graph.directed) {
-            FlowNetwork someGraph = graph.asFlowNetwork(graph.V + 2, (from, to) -> 1);
-            int sPrime = graph.V;
-            int tPrime = graph.V + 1;
-            // add new s and paths to old source and sink
-            someGraph.addEdge(new FlowEdge(sPrime, graph.mapping.get(graph.source), 1));
-            someGraph.addEdge(new FlowEdge(sPrime, graph.mapping.get(graph.sink), 1));
-
-            // add red
+            boolean someAnswer = false;
             for (Node node : graph.nodes) {
-                if (node.isRed) {
+                if (node.isRed){
+                    FlowNetwork someGraph = graph.asFlowNetwork(graph.V + 2, (from, to) -> 1);
+                    int sPrime = graph.V;
+                    int tPrime = graph.V + 1;
+                    // add new s and paths to old source and sink
+                    someGraph.addEdge(new FlowEdge(sPrime, graph.mapping.get(graph.source), 1));
+                    someGraph.addEdge(new FlowEdge(sPrime, graph.mapping.get(graph.sink), 1));
+
                     someGraph.addEdge(new FlowEdge(graph.mapping.get(node), tPrime, 2));
+
+                    FordFulkerson maxFlow = new FordFulkerson(someGraph, sPrime, tPrime);
+
+                    someAnswer = ((int) maxFlow.value()) >= 2;
+                    if (someAnswer) break;
                 }
             }
-            FordFulkerson maxFlow = new FordFulkerson(someGraph, sPrime, tPrime);
-
-            boolean someAnswer = ((int) maxFlow.value()) >= 2;
             System.out.printf("Some: %s\n", someAnswer);
             result.put(Problem.Some, Boolean.toString(someAnswer));
+
         } else {
             System.out.printf("Some: %s\n", false);
             result.put(Problem.Some, "false");
