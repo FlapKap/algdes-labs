@@ -47,7 +47,7 @@ public class RedScare {
                 "  \\midrule\n");
 
         results.forEach((name, result) -> {
-            if (graphs.get(name).V >= 500) {
+            if (graphs.get(name).V >= 0) {
                 sb.append(String.format(
                         "    %s & %d & %s & %s & %s & %s & %s \\\\ \n",
                         name,
@@ -67,7 +67,7 @@ public class RedScare {
         System.out.println("HOLY FUCK THAT TABLE IS AMAZING 😲 💻 💼💼💼");
 
 
-        System.out.println("IT WAS SO AWESOME WE HAVE TO DO IT AGAIN (to make the result.txt file)");
+        System.out.println("IT WAS SO AWESOME WE HAVE TO DO IT AGAIN (to make the result.csv file)");
         System.out.println("-------------------------------------------------");
         var sb2 = new StringBuilder();
         sb2.append("name\tn\tA\tF\tM\tN\tS\n");
@@ -88,15 +88,15 @@ public class RedScare {
         System.out.println("-------------------------------------------------");
         System.out.println("JESUS CHRIST I LOVE IT");
 
-}
+    }
 
-enum Problem {
-    None,
-    Some,
-    Many,
-    Few,
-    Alternate
-}
+    enum Problem {
+        None,
+        Some,
+        Many,
+        Few,
+        Alternate
+    }
 
     private static Map<Problem, String> runProblemsAndPrint(Graph graph) {
         Map<Problem, String> result = new HashMap<>();
@@ -115,7 +115,7 @@ enum Problem {
         // Some
         boolean someAnswer = false;
         for (Node node : graph.nodes) {
-            if (node.isRed){
+            if (node.isRed) {
                 FlowNetwork someGraph = graph.asFlowNetwork(graph.V + 2, (from, to) -> 1);
                 int sPrime = graph.V;
                 int tPrime = graph.V + 1;
@@ -154,21 +154,31 @@ enum Problem {
             return 0;
         });
         var bellmanFord = new BellmanFordSP(edgeWeightedDiGraph, sameSource);
-        int numRedVertices = -1;
-        try {
-            if (same.directed && bellmanFord.hasPathTo(sameSink)) {
+
+        if (!same.directed) {
+            //not a Directed: not a DAG
+            System.out.println("Many: ?!");
+            result.put(Problem.Many, "?!");
+        } else if (!bellmanFord.hasPathTo(sameSink)) {
+            //No path
+            System.out.println("Many: -1");
+            result.put(Problem.Many, "-1");
+        } else {
+            try {
                 var iterPath = bellmanFord.pathTo(sameSink);
-                numRedVertices = StreamSupport.stream(iterPath.spliterator(), false)
+                var numRedVertices = StreamSupport.stream(iterPath.spliterator(), false)
                         .map(e -> ((lookup.get(e.from()).isRed) ? 1 : 0) + ((lookup.get(e.from()).isRed) ? 1 : 0))
                         .mapToInt(e -> e)
                         .sum();
+                System.out.printf("Many: %s\n", numRedVertices);
+                result.put(Problem.Many, Integer.toString(numRedVertices));
+            } catch (UnsupportedOperationException e) {
+                //There is a cycle: not a DAG
+                System.out.println("Many: ?!");
+                result.put(Problem.Many, "?!");
             }
-        } catch (Exception e) {
-            //TODO: handle exception
-        } finally {
-            System.out.printf("Many: %s\n", numRedVertices);
-            result.put(Problem.Many, Integer.toString(numRedVertices));
         }
+
 
         //Few
         var few = graph.asEdgeWeightedDigraph((from, to) -> to.isRed ? 1 : 0);
