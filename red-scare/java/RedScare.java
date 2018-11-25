@@ -113,32 +113,27 @@ enum Problem {
 
 
         // Some
-        if (!graph.directed) {
-            boolean someAnswer = false;
-            for (Node node : graph.nodes) {
-                if (node.isRed){
-                    FlowNetwork someGraph = graph.asFlowNetwork(graph.V + 2, (from, to) -> 1);
-                    int sPrime = graph.V;
-                    int tPrime = graph.V + 1;
-                    // add new s and paths to old source and sink
-                    someGraph.addEdge(new FlowEdge(sPrime, graph.mapping.get(graph.source), 1));
-                    someGraph.addEdge(new FlowEdge(sPrime, graph.mapping.get(graph.sink), 1));
+        boolean someAnswer = false;
+        for (Node node : graph.nodes) {
+            if (node.isRed){
+                FlowNetwork someGraph = graph.asFlowNetwork(graph.V + 2, (from, to) -> 1);
+                int sPrime = graph.V;
+                int tPrime = graph.V + 1;
+                // add new s and paths to old source and sink
+                someGraph.addEdge(new FlowEdge(sPrime, graph.mapping.get(graph.source), 1));
+                someGraph.addEdge(new FlowEdge(sPrime, graph.mapping.get(graph.sink), 1));
 
-                    someGraph.addEdge(new FlowEdge(graph.mapping.get(node), tPrime, 2));
+                someGraph.addEdge(new FlowEdge(graph.mapping.get(node), tPrime, 2));
 
-                    FordFulkerson maxFlow = new FordFulkerson(someGraph, sPrime, tPrime);
+                FordFulkerson maxFlow = new FordFulkerson(someGraph, sPrime, tPrime);
 
-                    someAnswer = ((int) maxFlow.value()) >= 2;
-                    if (someAnswer) break;
-                }
+                someAnswer = ((int) maxFlow.value()) >= 2;
+                if (someAnswer) break;
             }
-            System.out.printf("Some: %s\n", someAnswer);
-            result.put(Problem.Some, Boolean.toString(someAnswer));
-
-        } else {
-            System.out.printf("Some: %s\n", false);
-            result.put(Problem.Some, "false");
         }
+        System.out.printf("Some: %s\n", someAnswer);
+        result.put(Problem.Some, Boolean.toString(someAnswer));
+
         //TODO: somehow make sure that the path is simple -> that it does not hit the same vertex twice
 
         //Many
